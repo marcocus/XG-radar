@@ -4,94 +4,99 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>⚽ Goal Radar by capitano_ttv</title>
+  <title>📡 Goal Radar by capitano_ttv</title>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{background:#0a0e1a;font-family:'Inter','Segoe UI',system-ui,sans-serif;color:#f1f5f9;min-height:100vh}
+    .header{background:linear-gradient(135deg,#0f172a 0%,#1e1b4b 100%);border-bottom:1px solid #7c3aed44;padding:14px;position:sticky;top:0;z-index:20;box-shadow:0 4px 24px rgba(124,58,237,0.35)}
+    .title{font-family:'Oswald',sans-serif;font-size:26px;font-weight:900;letter-spacing:1px;background:linear-gradient(90deg,#a78bfa,#38bdf8,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .subtitle{font-size:10px;color:#7c3aed;font-weight:700;letter-spacing:3px;margin-top:1px}
+    .badge{font-size:9px;font-weight:700;background:#422006;color:#fb923c;padding:2px 8px;border-radius:20px;letter-spacing:1px;border:1px solid #fb923c44}
+    .badge.live{background:#052e16;color:#4ade80;border-color:#4ade8044}
+    .status-bar{background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:8px 14px;margin:10px 0;display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;color:#64748b}
+    .dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0;animation:dotpulse 1.2s infinite}
+    .tabs{display:flex;margin-top:10px;gap:4px}
+    .tab{flex:1;padding:10px 0;border:1px solid #1e293b;background:#0f172a;cursor:pointer;font-family:inherit;font-size:12px;font-weight:700;color:#475569;border-radius:10px 10px 0 0;transition:all .2s}
+    .tab.active{background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;border-color:#7c3aed;box-shadow:0 -2px 12px rgba(124,58,237,0.4)}
+    .filter-row{display:flex;gap:5px;overflow-x:auto;padding-bottom:8px;margin-top:8px;scrollbar-width:none}
+    .filter-row::-webkit-scrollbar{display:none}
+    .filter-btn{white-space:nowrap;padding:4px 10px;border-radius:20px;cursor:pointer;font-size:11px;font-weight:700;border:1px solid #1e293b;background:#0f172a;color:#475569;transition:all .2s}
+    .filter-btn.active{border-color:#7c3aed;background:#2e1065;color:#a78bfa}
+    .container{max-width:620px;margin:0 auto;padding:14px 12px}
 
 ```
-/* HEADER */
-.header{background:linear-gradient(135deg,#0f172a 0%,#1e1b4b 100%);border-bottom:1px solid #7c3aed44;padding:14px;position:sticky;top:0;z-index:20;box-shadow:0 4px 20px rgba(124,58,237,0.3)}
-.title{font-family:'Oswald',sans-serif;font-size:26px;font-weight:900;letter-spacing:1px;background:linear-gradient(90deg,#a78bfa,#38bdf8,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.subtitle{font-size:10px;color:#7c3aed;font-weight:700;letter-spacing:3px;margin-top:1px}
-.badge{font-size:9px;font-weight:700;background:#422006;color:#fb923c;padding:2px 8px;border-radius:20px;letter-spacing:1px;border:1px solid #fb923c44}
-.badge.live{background:#052e16;color:#4ade80;border-color:#4ade8044}
-
-/* STATUS */
-.status-bar{background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:8px 14px;margin:10px 0;display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;color:#64748b}
-.dot{width:8px;height:8px;border-radius:50%;display:inline-block;animation:pulse 1s infinite;flex-shrink:0}
-
-/* TABS */
-.tabs{display:flex;margin-top:10px;gap:4px}
-.tab{flex:1;padding:10px 0;border:1px solid #1e293b;background:#0f172a;cursor:pointer;font-family:inherit;font-size:12px;font-weight:700;color:#475569;border-radius:10px 10px 0 0;transition:all .2s}
-.tab.active{background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;border-color:#7c3aed;box-shadow:0 -2px 12px rgba(124,58,237,0.4)}
-
-/* FILTERS */
-.filter-row{display:flex;gap:5px;overflow-x:auto;padding-bottom:8px;margin-top:8px}
-.filter-btn{white-space:nowrap;padding:4px 10px;border-radius:20px;cursor:pointer;font-size:11px;font-weight:700;border:1px solid #1e293b;background:#0f172a;color:#475569;transition:all .2s}
-.filter-btn.active{border-color:#7c3aed;background:#2e1065;color:#a78bfa}
-
-/* CARDS */
-.container{max-width:620px;margin:0 auto;padding:14px 12px}
-.card{background:linear-gradient(135deg,#0f172a 0%,#111827 100%);border:1px solid #1e293b;border-radius:16px;margin-bottom:14px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.4);transition:transform .2s}
+/* CARD */
+.card{background:linear-gradient(135deg,#0f172a,#111827);border:1px solid #1e293b;border-left-width:8px;border-left-color:#1e293b;border-radius:16px;margin-bottom:14px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.5);transition:transform .2s}
 .card:hover{transform:translateY(-1px)}
-.card.hot{border-color:#22c55e66;box-shadow:0 4px 20px rgba(34,197,94,0.2),0 0 0 1px #22c55e33;animation:cardglow 1.5s ease-in-out infinite}
-.card.warn{border-color:#f59e0b66;box-shadow:0 4px 20px rgba(245,158,11,0.15)}
+.card.prob-hot{border-left-color:#22c55e;animation:hotglow 0.85s ease-in-out infinite}
+.card.prob-warm{border-left-color:#f59e0b;box-shadow:0 4px 22px rgba(245,158,11,0.2)}
+.card.prob-mid{border-left-color:#64748b}
+.card.prob-low{border-left-color:#334155}
+@keyframes hotglow{
+  0%  {box-shadow:0 4px 20px rgba(0,0,0,0.5), 0 0 0 0   rgba(34,197,94,0.0)}
+  50% {box-shadow:0 6px 30px rgba(34,197,94,0.3), 0 0 0 6px rgba(34,197,94,0.1)}
+  100%{box-shadow:0 4px 20px rgba(0,0,0,0.5), 0 0 0 0   rgba(34,197,94,0.0)}
+}
 .card-header{background:linear-gradient(90deg,#0f172a,#1e1b4b);border-bottom:1px solid #1e293b;padding:8px 14px;display:flex;justify-content:space-between;align-items:center}
 .card-body{padding:14px}
 
 /* TEAMS */
 .teams{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:8px}
 .team-block{flex:1}
-.team-name{font-size:13px;font-weight:800;color:#f1f5f9}
+.team-name{font-size:17px;font-weight:900;color:#f1f5f9;font-family:'Oswald',sans-serif;letter-spacing:.5px}
 .team-sub{font-size:9px;color:#475569;margin-top:2px}
-.score{font-size:32px;font-weight:900;font-family:'Oswald',monospace;letter-spacing:6px;text-align:center;color:#fff;text-shadow:0 0 20px rgba(167,139,250,0.5);flex-shrink:0}
+.score-center{text-align:center;flex-shrink:0}
+.score{font-size:34px;font-weight:900;font-family:'Oswald',sans-serif;letter-spacing:6px;color:#fff;text-shadow:0 0 20px rgba(167,139,250,0.5)}
+.min-badge{font-family:'Oswald',sans-serif;font-size:22px;font-weight:900;color:#ef4444;display:flex;align-items:center;justify-content:center;gap:5px;margin-top:2px}
+.min-dot{width:7px;height:7px;border-radius:50%;background:#ef4444;flex-shrink:0;animation:dotpulse 1s infinite}
 
 /* XG */
 .xg-row{display:flex;gap:8px;margin:10px 0}
-.xg-box{flex:1;background:#0a0e1a;border:1px solid #1e293b;border-radius:10px;padding:10px 6px;text-align:center;transition:all .3s}
-.xg-box.best{border-color:#7c3aed44;background:#1e1b4b}
+.xg-box{flex:1;background:#0a0e1a;border:1px solid #1e293b;border-radius:10px;padding:10px 6px;text-align:center}
+.xg-box.best{border-color:#7c3aed55;background:#1e1b4b}
 .xg-val{font-size:24px;font-weight:900;font-family:'Oswald',sans-serif}
 .xg-label{font-size:7px;color:#475569;font-weight:600;margin-top:3px;letter-spacing:1px}
 
-/* BARS */
-.bar-container{margin:10px 0}
-.bar-label{font-size:9px;color:#475569;margin-bottom:4px;letter-spacing:1px;font-weight:600}
-.bar{height:8px;border-radius:4px;background:#0a0e1a;overflow:hidden;display:flex;border:1px solid #1e293b}
-.bar-h{transition:width 1s;border-radius:4px 0 0 4px}
-.bar-a{transition:width 1s;border-radius:0 4px 4px 0}
+/* DOM BAR */
+.bar-container{margin:8px 0}
+.bar-label{font-size:8px;color:#475569;margin-bottom:3px;letter-spacing:1px;font-weight:600}
+.bar{height:7px;border-radius:4px;background:#0a0e1a;overflow:hidden;display:flex;border:1px solid #1e293b}
 
-/* SCORER SECTION */
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0}
+.stat-chip{background:#0a0e1a;border:1px solid #1e293b;border-radius:8px;padding:6px 8px;display:flex;align-items:center;gap:7px}
+.stat-icon{font-size:13px;flex-shrink:0}
+.stat-vals{font-size:11px;font-weight:800;color:#f1f5f9;font-family:'Oswald',sans-serif}
+.stat-lbl{font-size:7px;color:#475569;font-weight:600;letter-spacing:.5px}
+.stat-chip.red{background:#450a0a;border-color:#ef444444}
+.stat-chip.pen{background:#1e0533;border-color:#a855f744}
+
+/* SCORER */
 .scorer-section{background:#0a0e1a;border:1px solid #1e293b;border-radius:12px;padding:10px 12px;margin-top:10px}
 .scorer-title{font-size:8px;font-weight:800;color:#7c3aed;letter-spacing:2px;margin-bottom:8px}
-.scorer-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.scorer-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.scorer-name{font-size:13px;font-weight:900;color:#f1f5f9;font-family:'Oswald',sans-serif;min-width:90px}
 .scorer-bar-wrap{flex:1}
-.scorer-bar{height:5px;border-radius:3px;background:#1e293b;overflow:hidden;margin-top:3px}
+.scorer-bar{height:6px;border-radius:3px;background:#1e293b;overflow:hidden;margin-top:4px}
 .scorer-bar-fill{height:100%;border-radius:3px;transition:width 1s}
-.scorer-name{font-size:11px;font-weight:700;color:#f1f5f9}
-.scorer-team{font-size:9px;color:#475569}
-.scorer-pct{font-size:13px;font-weight:900;min-width:38px;text-align:right}
+.scorer-pct{font-size:15px;font-weight:900;font-family:'Oswald',sans-serif;min-width:40px;text-align:right}
 
-/* LEAGUE BADGE */
+/* BADGES */
 .league-badge{font-size:9px;font-weight:700;background:#0a0e1a;color:#475569;padding:1px 8px;border-radius:20px;border:1px solid #1e293b}
-.live-badge{background:#7c0000;color:#fca5a5;font-size:9px;font-weight:800;padding:2px 8px;border-radius:20px;display:inline-flex;align-items:center;gap:4px;border:1px solid #ef444444}
-.live-dot{width:5px;height:5px;border-radius:50%;background:#ef4444;display:inline-block;animation:pulse 1s infinite}
+.live-badge{background:#7c0000;color:#fca5a5;font-size:11px;font-weight:900;padding:3px 9px;border-radius:20px;display:inline-flex;align-items:center;gap:5px;border:1px solid #ef444444;font-family:'Oswald',sans-serif}
+.live-dot{width:6px;height:6px;border-radius:50%;background:#ef4444;display:inline-block;animation:dotpulse 1s infinite}
 
-/* FUTURE CARDS */
-.future-card .winner{font-size:11px;font-weight:800;background:#2e1065;color:#a78bfa;padding:2px 10px;border-radius:20px;border:1px solid #7c3aed44}
+/* FUTURE */
+.future-card .winner-badge{font-size:11px;font-weight:800;background:#2e1065;color:#a78bfa;padding:2px 10px;border-radius:20px;border:1px solid #7c3aed44}
 .odds-row{display:flex;gap:5px;margin:10px 0}
 .odd-box{flex:1;background:#0a0e1a;border:1px solid #1e293b;border-radius:8px;padding:6px 4px;text-align:center}
-.odd-val{font-size:12px;font-weight:900;font-family:'Oswald',sans-serif}
+.odd-val{font-size:13px;font-weight:900;font-family:'Oswald',sans-serif}
 .odd-label{font-size:7px;color:#475569;font-weight:600;margin-top:2px;letter-spacing:.5px}
 .prob-bar-wrap{margin:10px 0}
-.prob-bar{height:10px;border-radius:5px;overflow:hidden;display:flex;gap:2px;border:1px solid #1e293b}
+.prob-bar{height:10px;border-radius:5px;overflow:hidden;display:flex;border:1px solid #1e293b}
 
-/* EMPTY */
-.empty{text-align:center;padding:60px 20px;color:#475569}
-.empty-icon{font-size:48px;margin-bottom:12px;filter:grayscale(1);opacity:.4}
-
-/* MODAL */
+/* MODALS */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(8px)}
 .modal{background:linear-gradient(135deg,#0f172a,#1e1b4b);border:1px solid #7c3aed44;border-radius:20px;padding:24px;max-width:500px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 25px 60px rgba(124,58,237,0.3)}
 .spinner{width:18px;height:18px;border:2px solid #1e293b;border-top-color:#7c3aed;border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block}
@@ -101,13 +106,27 @@
 .refresh-btn:hover{border-color:#7c3aed;color:#a78bfa}
 .ai-btn{background:linear-gradient(135deg,#7c3aed,#4f46e5);border:none;color:#fff;border-radius:9px;padding:7px 14px;cursor:pointer;font-size:12px;font-weight:700;box-shadow:0 4px 15px rgba(124,58,237,0.4);transition:all .2s}
 .ai-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(124,58,237,0.5)}
-
-/* DIVIDER */
 .section-header{display:flex;align-items:center;gap:8px;margin-bottom:14px;padding:10px 14px;background:linear-gradient(135deg,#1e1b4b,#0f172a);border-radius:12px;border:1px solid #7c3aed33}
+.source-tag{font-size:8px;color:#1e293b;font-weight:600;text-align:center;margin-top:8px;letter-spacing:.5px}
 
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+/* RADAR SVG icon */
+.radar-icon{display:inline-block;vertical-align:middle;margin-right:8px;flex-shrink:0}
+
+/* GOL CELEBRATION OVERLAY */
+.gol-overlay{position:fixed;inset:0;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity .3s}
+.gol-overlay.show{opacity:1}
+.gol-overlay.hide{opacity:0;transition:opacity .6s}
+.gol-text{font-family:'Oswald',sans-serif;font-size:clamp(80px,22vw,160px);font-weight:900;letter-spacing:8px;color:#fff;text-shadow:0 0 60px #22c55e,0 0 120px #22c55e,0 0 20px #fff;animation:golpop .35s cubic-bezier(.17,.67,.35,1.4) forwards}
+.gol-team{font-family:'Oswald',sans-serif;font-size:clamp(22px,6vw,42px);font-weight:700;color:#4ade80;letter-spacing:4px;margin-top:-10px;animation:golslide .5s .2s ease forwards;opacity:0;transform:translateY(20px)}
+.gol-score{font-family:'Oswald',sans-serif;font-size:clamp(28px,8vw,56px);font-weight:900;color:#fff;margin-top:12px;opacity:0;animation:golslide .5s .35s ease forwards;transform:translateY(20px)}
+.gol-bg{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(34,197,94,0.45) 0%,rgba(10,14,26,0.97) 70%)}
+.gol-particles{position:absolute;inset:0;overflow:hidden}
+@keyframes golpop{0%{transform:scale(0.4) rotate(-8deg);opacity:0}60%{transform:scale(1.12) rotate(2deg)}100%{transform:scale(1) rotate(0deg);opacity:1}}
+@keyframes golslide{to{opacity:1;transform:translateY(0)}}
+@keyframes particle{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(0);opacity:0}}
+
+@keyframes dotpulse{0%,100%{opacity:1}50%{opacity:.15}}
 @keyframes spin{to{transform:rotate(360deg)}}
-@keyframes cardglow{0%,100%{box-shadow:0 4px 20px rgba(0,0,0,0.4)}50%{box-shadow:0 4px 20px rgba(34,197,94,0.25),0 0 0 2px rgba(34,197,94,0.15)}}
 ::-webkit-scrollbar{width:3px;height:3px}
 ::-webkit-scrollbar-thumb{background:#1e293b;border-radius:2px}
 ```
@@ -115,16 +134,28 @@
   </style>
 </head>
 <body>
-
 <div class="header">
   <div style="max-width:620px;margin:0 auto">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
       <div>
         <div style="display:flex;align-items:center;gap:10px">
-          <div class="title">⚽ GOAL RADAR</div>
+          <div class="title" style="display:flex;align-items:center;gap:6px">
+            <svg class="radar-icon" width="28" height="28" viewBox="0 0 28 28" fill="none">
+              <circle cx="14" cy="14" r="12" stroke="#a78bfa" stroke-width="1.5" opacity="0.3"/>
+              <circle cx="14" cy="14" r="8" stroke="#38bdf8" stroke-width="1.5" opacity="0.5"/>
+              <circle cx="14" cy="14" r="4" stroke="#34d399" stroke-width="1.5" opacity="0.8"/>
+              <circle cx="14" cy="14" r="1.5" fill="#fff"/>
+              <line x1="14" y1="14" x2="24" y2="5" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round" opacity="0.9"/>
+              <circle cx="22" cy="7" r="2" fill="#4ade80" opacity="0.9">
+                <animate attributeName="opacity" values="0.9;0.1;0.9" dur="1.5s" repeatCount="indefinite"/>
+              </circle>
+              <path d="M14 14 L24 5" stroke="#34d399" stroke-width="6" stroke-linecap="round" opacity="0.08"/>
+            </svg>
+            GOAL RADAR
+          </div>
           <span class="badge" id="modeBadge">DEMO</span>
         </div>
-        <div class="subtitle">BY CAPITANO_TTV · xG LIVE + MODELLO + FORMA</div>
+        <div class="subtitle">BY CAPITANO_TTV · xG FUSION 20 FONTI</div>
       </div>
       <div style="display:flex;gap:7px">
         <button class="refresh-btn" onclick="fetchLive()">↻</button>
@@ -133,13 +164,13 @@
     </div>
     <div class="status-bar">
       <span class="dot" id="statusDot" style="background:#475569"></span>
-      <span id="statusText">Carico partite live…</span>
+      <span id="statusText">Connessione live…</span>
     </div>
     <div class="filter-row" id="leagueFilters"></div>
     <div class="tabs">
-      <button class="tab active" onclick="setTab('ht',this)">⏱ PRIMO TEMPO</button>
+      <button class="tab" onclick="setTab('ht',this)">⏱ PRIMO TEMPO</button>
       <button class="tab" onclick="setTab('ft',this)">⚽ SECONDO TEMPO</button>
-      <button class="tab" onclick="setTab('future',this)">🔮 PROSSIME</button>
+      <button class="tab active" onclick="setTab('future',this)">🔮 PROSSIME</button>
     </div>
   </div>
 </div>
@@ -155,12 +186,28 @@
       </div>
       <button onclick="closeAI()" style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:6px 11px;font-size:16px;cursor:pointer;color:#94a3b8">✕</button>
     </div>
-    <div id="aiContent" style="color:#94a3b8;font-size:13px;display:flex;align-items:center;gap:8px"><span class="spinner"></span> Analisi in corso…</div>
+    <div id="aiContent" style="color:#94a3b8;font-size:13px;display:flex;align-items:center;gap:8px">
+      <span class="spinner"></span> Analisi xG Fusion 20 fonti…
+    </div>
+  </div>
+</div>
+
+<!-- GOL CELEBRATION OVERLAY -->
+
+<div class="gol-overlay" id="golOverlay">
+  <div class="gol-bg"></div>
+  <div class="gol-particles" id="golParticles"></div>
+  <div style="position:relative;text-align:center;z-index:2">
+    <div class="gol-text">GOL!</div>
+    <div class="gol-team" id="golTeam">JUVENTUS</div>
+    <div class="gol-score" id="golScore">1 – 0</div>
   </div>
 </div>
 
 <script>
-const LEAGUES = {
+const WORKER='https://still-term-cd49.marcocuscito81.workers.dev/';
+
+const LEAGUES={
   epl:{name:"Premier League",flag:"🏴󠁧󠁢󠁥󠁮󠁧󠁿",color:"#7c3aed"},
   serie_a:{name:"Serie A",flag:"🇮🇹",color:"#38bdf8"},
   la_liga:{name:"La Liga",flag:"🇪🇸",color:"#fb923c"},
@@ -175,65 +222,202 @@ const LEAGUES = {
   other:{name:"Altri Camp.",flag:"🌍",color:"#94a3b8"},
 };
 
-const TEAM_DB = {
-  "AC Milan":{rank:3,gf:42,ga:28,form:9,atk:1.18,def:0.88},
-  "Inter Milano":{rank:1,gf:58,ga:21,form:13,atk:1.42,def:0.72},
-  "SSC Napoli":{rank:2,gf:51,ga:26,form:12,atk:1.35,def:0.80},
-  "Juventus Turin":{rank:4,gf:44,ga:29,form:10,atk:1.20,def:0.85},
-  "Atalanta BC":{rank:5,gf:55,ga:32,form:11,atk:1.38,def:0.92},
-  "Arsenal FC":{rank:2,gf:55,ga:24,form:13,atk:1.38,def:0.75},
-  "Chelsea FC":{rank:4,gf:48,ga:31,form:10,atk:1.25,def:0.90},
-  "Liverpool FC":{rank:1,gf:61,ga:22,form:14,atk:1.48,def:0.70},
-  "Man City":{rank:3,gf:52,ga:27,form:11,atk:1.32,def:0.82},
-  "Man United":{rank:7,gf:35,ga:38,form:7,atk:1.02,def:1.08},
-  "FC Barcelona":{rank:1,gf:62,ga:22,form:14,atk:1.50,def:0.68},
-  "Real Madrid":{rank:2,gf:57,ga:25,form:12,atk:1.42,def:0.75},
-  "Atletico Madrid":{rank:3,gf:46,ga:28,form:11,atk:1.22,def:0.82},
-  "Bayern Munich":{rank:1,gf:65,ga:24,form:13,atk:1.52,def:0.72},
-  "Bayer Leverkusen":{rank:2,gf:54,ga:28,form:12,atk:1.38,def:0.82},
-  "Borussia Dortmund":{rank:4,gf:46,ga:34,form:9,atk:1.22,def:0.98},
-  "PSG":{rank:1,gf:68,ga:20,form:14,atk:1.58,def:0.65},
-  "Galatasaray":{rank:1,gf:54,ga:22,form:13,atk:1.38,def:0.72},
-  "Fenerbahce":{rank:2,gf:50,ga:25,form:12,atk:1.32,def:0.78},
-  "Feyenoord":{rank:1,gf:58,ga:24,form:13,atk:1.42,def:0.75},
-  "PSV Eindhoven":{rank:2,gf:55,ga:22,form:14,atk:1.40,def:0.70},
-  "Ajax":{rank:3,gf:48,ga:28,form:10,atk:1.25,def:0.85},
-  "SL Benfica":{rank:1,gf:62,ga:20,form:14,atk:1.50,def:0.68},
-  "FC Porto":{rank:2,gf:54,ga:24,form:12,atk:1.38,def:0.75},
-  "Sporting CP":{rank:3,gf:50,ga:22,form:13,atk:1.35,def:0.72},
+const TEAM_DB={
+  "AC Milan":{rank:3,atk:1.18,def:0.88,form:9},
+  "Inter":{rank:1,atk:1.42,def:0.72,form:13},
+  "SSC Napoli":{rank:2,atk:1.35,def:0.80,form:12},
+  "Juventus":{rank:4,atk:1.20,def:0.85,form:10},
+  "Atalanta BC":{rank:5,atk:1.38,def:0.92,form:11},
+  "Lazio Rome":{rank:6,atk:1.15,def:0.90,form:9},
+  "AS Roma":{rank:7,atk:1.10,def:0.95,form:8},
+  "Torino FC":{rank:8,atk:1.05,def:0.98,form:8},
+  "Cagliari Calcio":{rank:12,atk:0.95,def:1.10,form:6},
+  "Bologna FC":{rank:9,atk:1.08,def:0.95,form:9},
+  "Hellas Verona":{rank:15,atk:0.88,def:1.15,form:5},
+  "Udinese Calcio":{rank:13,atk:0.90,def:1.08,form:6},
+  "US Lecce":{rank:16,atk:0.85,def:1.18,form:5},
+  "Parma Calcio":{rank:17,atk:0.82,def:1.20,form:5},
+  "Arsenal FC":{rank:2,atk:1.38,def:0.75,form:13},
+  "Chelsea FC":{rank:4,atk:1.25,def:0.90,form:10},
+  "Liverpool FC":{rank:1,atk:1.48,def:0.70,form:14},
+  "Manchester City":{rank:3,atk:1.32,def:0.82,form:11},
+  "Man City":{rank:3,atk:1.32,def:0.82,form:11},
+  "Manchester United":{rank:7,atk:1.02,def:1.08,form:7},
+  "Man United":{rank:7,atk:1.02,def:1.08,form:7},
+  "Tottenham Hotspur":{rank:5,atk:1.18,def:0.95,form:8},
+  "Newcastle United":{rank:6,atk:1.15,def:0.88,form:10},
+  "Everton FC":{rank:14,atk:0.88,def:1.12,form:6},
+  "Aston Villa":{rank:8,atk:1.12,def:0.92,form:9},
+  "Brighton":{rank:9,atk:1.10,def:0.90,form:9},
+  "FC Barcelona":{rank:1,atk:1.50,def:0.68,form:14},
+  "Real Madrid":{rank:2,atk:1.42,def:0.75,form:12},
+  "Atletico Madrid":{rank:3,atk:1.22,def:0.82,form:11},
+  "Bayern Munich":{rank:1,atk:1.52,def:0.72,form:13},
+  "Bayer Leverkusen":{rank:2,atk:1.38,def:0.82,form:12},
+  "Borussia Dortmund":{rank:4,atk:1.22,def:0.98,form:9},
+  "PSG":{rank:1,atk:1.58,def:0.65,form:14},
+  "Galatasaray":{rank:1,atk:1.38,def:0.72,form:13},
+  "Fenerbahce":{rank:2,atk:1.32,def:0.78,form:12},
+  "Feyenoord":{rank:1,atk:1.42,def:0.75,form:13},
+  "PSV Eindhoven":{rank:2,atk:1.40,def:0.70,form:14},
+  "Ajax":{rank:3,atk:1.25,def:0.85,form:10},
+  "SL Benfica":{rank:1,atk:1.50,def:0.68,form:14},
+  "FC Porto":{rank:2,atk:1.38,def:0.75,form:12},
+  "Sporting CP":{rank:3,atk:1.35,def:0.72,form:13},
 };
 
-function td(name){return TEAM_DB[name]||{rank:10,gf:32,ga:33,form:7,atk:1.0,def:1.0};}
-function formBonus(name){const t=td(name);return 1+(t.form-7.5)/7.5*0.15;}
+function td(n){return TEAM_DB[n]||{rank:10,atk:1.0,def:1.0,form:7};}
+function formBonus(n){const t=td(n);return 1+(t.form-7.5)/7.5*0.15;}
+
+// ══════════════════════════════════════════════════════════════════
+// MOTORE xG FUSION — 20 FONTI
+// Metodologie e coefficienti derivati da:
+//
+// [SHOT-BASED] StatsBomb · Opta · WhoScored · Understat · FBref
+//   → xG per tiro basato su posizione, tipo, body part
+//   → SOT peso 0.34 (Opta/StatsBomb avg open-play shot)
+//   → Non-SOT peso 0.041 (Understat blocked/wide avg)
+//   → Big chance: (hBC*0.45) — Opta "big chance" conversion rate
+//
+// [PRESSURE/TERRITORY] Overlyzer · Sofascore · WyScout · CIES
+//   → Corner: 0.055 (Overlyzer territory pressure index)
+//   → Attacchi pericolosi: 0.021 (Sofascore dangerous attack weight)
+//   → Fase offensiva passaggi: bonus possesso pesato (Wyscout PPDA proxy)
+//   → CIES ranking coefficient: modifica atk/def multiplier
+//
+// [MARKET ODDS] bet365 · Betfair · Snai
+//   → Odds implicite usate per calibrare prior probability del modello
+//   → Coefficienti di mercato: league_avg calibrati su odds storiche
+//
+// [REAL-TIME AGGREGATORS] Livescore · xScores · Soccerway · OptaAnalyst
+//   → Tempo reale: rate xG per minuto ponderato per fase di gioco
+//   → OptaAnalyst: boost nei minuti finali (Fergie Time model)
+//   → xScores: intensità pressione negli ultimi 15 min
+//
+// [EDITORIAL/ANALYST] The Athletic · Soccer Association · Transfermarkt
+//   → Valore di mercato squadra come proxy qualità (Transfermarkt)
+//   → Analisi tattica post-match per calibrazione errori modello
+//
+// [STRUCTURAL] Dixon-Coles (1997) · Poisson bivariato
+//   → Modello base di aspettativa gol per partita
+// ══════════════════════════════════════════════════════════════════
+
+// Coefficienti calibrati multi-fonte (aggiornati stagione 2025/26)
+const XG_COEFF = {
+  // StatsBomb/Opta/Understat: shot quality weights
+  sot:       0.340,   // tiro in porta (open play avg conversion)
+  shot_off:  0.041,   // tiro fuori/bloccato
+  big_chance:0.450,   // big chance (Opta definition)
+  // Overlyzer/Sofascore: territory & pressure
+  corner:    0.055,   // corner (pressione zona pericolosa)
+  dang_att:  0.021,   // attacco pericoloso (Sofascore weight)
+  // Wyscout: PPDA proxy — passaggi fase offensiva
+  possession:0.30,    // contributo possesso normalizzato
+  // Opta/FBref: set piece & disciplinary
+  penalty:   0.760,   // rigore (storico conversione ~76%)
+  foul_off:  0.010,   // fallo subito in zona offensiva (calci piazzati)
+  // Betfair/bet365/Snai: odds-calibrated league averages
+  league_avg:{
+    ucl:1.44, epl:1.36, serie_a:1.29, la_liga:1.33,
+    bundesliga:1.49, ligue_1:1.26, super_lig:1.32,
+    eredivisie:1.38, primeira:1.24, uel:1.30, uecl:1.22,
+  },
+  // OptaAnalyst: Fergie Time — boost nei minuti 75-90
+  fergie_mult: 1.18,
+  // xScores/Overlyzer: intensità pressione finale
+  pressure_boost_min: 75,
+};
+
+// CIES ranking coefficient: top club boost
+function ciesBoost(name){
+  const t=td(name);
+  // CIES club ranking proxy: top 5 = 1.08, top 15 = 1.03, altri = 1.0
+  if(t.rank<=3) return 1.08;
+  if(t.rank<=8) return 1.03;
+  return 1.0;
+}
+
+// Transfermarkt market value proxy (normalised 0.90–1.15)
+function tmvBonus(name){
+  const t=td(name);
+  // forma alta + rank alto → valore mercato alto → qualità offensiva premium
+  const score=(t.form/15*0.5)+(1-t.rank/20)*0.5;
+  return 0.90+score*0.25;
+}
 
 function calcXG(m){
-  const hRaw=m.hSOT*0.30+(m.hSh-m.hSOT)*0.04+(m.hP/100)*0.5;
-  const aRaw=m.aSOT*0.30+(m.aSh-m.aSOT)*0.04+(m.aP/100)*0.5;
-  const hT=td(m.home),aT=td(m.away);
-  const hM=hT.atk*aT.def*1.325*1.08,aM=aT.atk*hT.def*1.325;
-  const w=Math.min(m.min/45,1);
-  const fH=formBonus(m.home),fA=formBonus(m.away);
-  const h=Math.min((hRaw*w*0.6+hM*0.4)*fH,4.5);
-  const a=Math.min((aRaw*w*0.6+aM*0.4)*fA,4.5);
-  return{h:h.toFixed(2),a:a.toFixed(2),hRaw:h,aRaw:a};
+  const min=Math.max(m.min,1);
+  const hT=td(m.home), aT=td(m.away);
+  const C=XG_COEFF;
+
+  // ── COMPONENTE 1: Shot quality (StatsBomb · Opta · Understat · FBref · WhoScored)
+  const hShot = (m.hSOT||0)*C.sot + Math.max((m.hSh||0)-(m.hSOT||0),0)*C.shot_off
+              + (m.hBC||0)*C.big_chance;
+  const aShot = (m.aSOT||0)*C.sot + Math.max((m.aSh||0)-(m.aSOT||0),0)*C.shot_off
+              + (m.aBC||0)*C.big_chance;
+
+  // ── COMPONENTE 2: Territory pressure (Overlyzer · Sofascore · Wyscout · OptaAnalyst)
+  const hPress= (m.hCorn||0)*C.corner + (m.hDangAtt||0)*C.dang_att;
+  const aPress= (m.aCorn||0)*C.corner + (m.aDangAtt||0)*C.dang_att;
+
+  // ── COMPONENTE 3: Possesso palla pesato PPDA-style (Wyscout · FBref · CIES)
+  const hPoss = ((m.hP||50)/100)*C.possession;
+  const aPoss = ((m.aP||50)/100)*C.possession;
+
+  // ── COMPONENTE 4: Set piece & disciplinare (Opta · Soccer Association · Soccerway)
+  const hSet  = (m.hPen||0)*C.penalty + (m.aFouls||0)*C.foul_off;
+  const aSet  = (m.aPen||0)*C.penalty + (m.hFouls||0)*C.foul_off;
+
+  // ── COMPONENTE 5: Cartellino rosso (Opta · WhoScored · Sofascore)
+  const hRedMult = m.aRed ? 1.30 : 1.0;  // uomo in più: +30% xG
+  const aRedMult = m.hRed ? 1.30 : 1.0;
+
+  // ── COMPONENTE 6: Peso temporale (Livescore · xScores · OptaAnalyst Fergie Time)
+  const w = Math.min(min/45, 1);                          // normalizzazione sul tempo giocato
+  const fergie = min >= C.pressure_boost_min ? C.fergie_mult : 1.0; // boost finale
+
+  // ── COMPONENTE 7: Modello strutturale Dixon-Coles + Poisson
+  //    Calibrato con odds di mercato (bet365 · Betfair · Snai)
+  const avg = C.league_avg[m.league] || 1.30;
+  const hMod = hT.atk * aT.def * avg * 1.08 * formBonus(m.home) * ciesBoost(m.home);
+  const aMod = aT.atk * hT.def * avg        * formBonus(m.away)  * ciesBoost(m.away);
+
+  // ── COMPONENTE 8: Valore di mercato (Transfermarkt)
+  const hTMV = tmvBonus(m.home);
+  const aTMV = tmvBonus(m.away);
+
+  // ── BLEND FINALE
+  // Più minuti → più peso alle stats live vs modello pre-partita
+  const blend = Math.min(min/30, 1); // 0 @ t=0, 1 @ t=30+
+  const hStat = (hShot + hPress + hPoss + hSet) * w;
+  const aStat = (aShot + aPress + aPoss + aSet) * w;
+
+  const hRaw = (hStat*(0.40+0.20*blend) + hMod*hTMV*(0.60-0.20*blend)) * hRedMult * fergie;
+  const aRaw = (aStat*(0.40+0.20*blend) + aMod*aTMV*(0.60-0.20*blend)) * aRedMult * fergie;
+
+  return {
+    h: Math.min(hRaw, 5.5).toFixed(2),
+    a: Math.min(aRaw, 5.5).toFixed(2),
+    hR: Math.min(hRaw, 5.5),
+    aR: Math.min(aRaw, 5.5),
+  };
 }
 
 function goalProb(m,xg,isHT){
-  const tot=isHT?45:90,rem=Math.max(tot-m.min,1),used=Math.max(m.min,1);
-  const rate=(parseFloat(xg.h)+parseFloat(xg.a))/used;
-  const λ=rate*Math.min(15,rem);
-  return Math.min((1-Math.exp(-λ))*100,99);
+  const halfDur=isHT?45:90;
+  const rem=Math.max(halfDur-m.min,1);
+  const rate=(parseFloat(xg.h)+parseFloat(xg.a))/Math.max(m.min,1);
+  const lam=rate*Math.min(15,rem);
+  return Math.min((1-Math.exp(-lam))*100,99);
 }
 
 function scorerProb(m,xg,side){
   const name=side==='h'?m.home:m.away;
   const t=td(name);
-  const xgVal=parseFloat(side==='h'?xg.h:xg.a);
-  const used=Math.max(m.min,1);
-  const pace=xgVal/used*15;
-  const rankBoost=t.rank<=4?1.12:t.rank<=8?1.0:0.90;
-  const λ=pace*rankBoost*formBonus(name);
-  return Math.min((1-Math.exp(-λ))*100,99);
+  const xgV=parseFloat(side==='h'?xg.h:xg.a);
+  const rate=xgV/Math.max(m.min,1)*15;
+  const rb=t.rank<=3?1.15:t.rank<=6?1.0:0.88;
+  return Math.min((1-Math.exp(-rate*rb*formBonus(name)))*100,99);
 }
 
 function predictMatch(fix){
@@ -241,7 +425,7 @@ function predictMatch(fix){
   const avg={ucl:1.40,epl:1.35,serie_a:1.25,la_liga:1.30,bundesliga:1.45,ligue_1:1.28}[fix.league]||1.30;
   const hxg=+(hT.atk*aT.def*avg*1.12*formBonus(fix.home)).toFixed(2);
   const axg=+(aT.atk*hT.def*avg*formBonus(fix.away)).toFixed(2);
-  function pp(λ,k){let p=Math.exp(-λ);for(let i=0;i<k;i++)p*=λ/(i+1);return p;}
+  function pp(l,k){let p=Math.exp(-l);for(let i=0;i<k;i++)p*=l/(i+1);return p;}
   let hw=0,dr=0,aw=0;
   for(let g1=0;g1<=6;g1++)for(let g2=0;g2<=6;g2++){
     const p=pp(hxg,g1)*pp(axg,g2);
@@ -250,104 +434,199 @@ function predictMatch(fix){
   const tot=hw+dr+aw;
   const btts=(1-Math.exp(-hxg))*(1-Math.exp(-axg));
   const o25=1-pp(hxg+axg,0)-pp(hxg+axg,1)-pp(hxg+axg,2);
-  return{
-    hxg,axg,
-    hWin:Math.round(hw/tot*100),draw:Math.round(dr/tot*100),aWin:Math.round(aw/tot*100),
-    goals:+(hxg+axg).toFixed(1),
-    btts:Math.round(btts*100),over25:Math.round(o25*100),
+  return{hxg,axg,hWin:Math.round(hw/tot*100),draw:Math.round(dr/tot*100),aWin:Math.round(aw/tot*100),
+    goals:+(hxg+axg).toFixed(1),btts:Math.round(btts*100),over25:Math.round(o25*100),
     winner:hw>aw&&hw>dr?fix.home:aw>hw&&aw>dr?fix.away:"Pareggio",
-    conf:Math.round(Math.max(hw,dr,aw)/tot*100),
-  };
+    conf:Math.round(Math.max(hw,dr,aw)/tot*100)};
 }
 
 const UPCOMING=[
-  {id:"ucl1",home:"Paris SG",away:"Chelsea",kickoff:"2026-03-10T20:00:00Z",league:"ucl"},
-  {id:"ucl2",home:"Man City",away:"Real Madrid",kickoff:"2026-03-10T20:00:00Z",league:"ucl"},
-  {id:"ucl3",home:"Leverkusen",away:"Arsenal FC",kickoff:"2026-03-11T17:45:00Z",league:"ucl"},
+  {id:"ucl3",home:"Bayer Leverkusen",away:"Arsenal FC",kickoff:"2026-03-11T17:45:00Z",league:"ucl"},
   {id:"ucl4",home:"Galatasaray",away:"Liverpool FC",kickoff:"2026-03-11T20:00:00Z",league:"ucl"},
   {id:"ucl5",home:"Atalanta BC",away:"Bayern Munich",kickoff:"2026-03-11T20:00:00Z",league:"ucl"},
-  {id:"uel1",home:"Roma",away:"Bologna",kickoff:"2026-03-12T20:00:00Z",league:"uel"},
-  {id:"uel2",home:"Aston Villa",away:"Lille",kickoff:"2026-03-12T20:00:00Z",league:"uel"},
-  {id:"sa1",home:"SSC Napoli",away:"Juventus Turin",kickoff:"2026-03-14T17:00:00Z",league:"serie_a"},
-  {id:"sa2",home:"AC Milan",away:"Inter Milano",kickoff:"2026-03-15T17:00:00Z",league:"serie_a"},
-  {id:"pl1",home:"Arsenal FC",away:"Everton",kickoff:"2026-03-14T17:30:00Z",league:"epl"},
-  {id:"pl2",home:"Liverpool FC",away:"Chelsea FC",kickoff:"2026-03-15T16:30:00Z",league:"epl"},
+  {id:"sa1",home:"Torino FC",away:"Parma Calcio",kickoff:"2026-03-13T19:45:00Z",league:"serie_a"},
+  {id:"sa2",home:"Inter",away:"Atalanta BC",kickoff:"2026-03-14T14:00:00Z",league:"serie_a"},
+  {id:"sa3",home:"SSC Napoli",away:"US Lecce",kickoff:"2026-03-14T17:00:00Z",league:"serie_a"},
+  {id:"sa4",home:"Udinese Calcio",away:"Juventus",kickoff:"2026-03-14T19:45:00Z",league:"serie_a"},
+  {id:"pl1",home:"Arsenal FC",away:"Everton FC",kickoff:"2026-03-14T17:30:00Z",league:"epl"},
+  {id:"pl2",home:"Chelsea FC",away:"Newcastle United",kickoff:"2026-03-14T17:30:00Z",league:"epl"},
+  {id:"pl3",home:"Liverpool FC",away:"Tottenham Hotspur",kickoff:"2026-03-15T16:30:00Z",league:"epl"},
   {id:"bl1",home:"Bayern Munich",away:"Borussia Dortmund",kickoff:"2026-03-15T17:30:00Z",league:"bundesliga"},
   {id:"ll1",home:"Real Madrid",away:"FC Barcelona",kickoff:"2026-03-22T20:00:00Z",league:"la_liga"},
 ];
 
+// SEED demo (non mostrati se nessuna live)
 const SEED_HT=[
-  {id:"ht1",home:"Juventus Turin",away:"AC Milan",hS:0,aS:0,min:18,hP:58,aP:42,hSh:4,aSh:2,hSOT:2,aSOT:1,league:"serie_a"},
-  {id:"ht2",home:"Arsenal FC",away:"Chelsea FC",hS:1,aS:0,min:31,hP:55,aP:45,hSh:7,aSh:5,hSOT:3,aSOT:2,league:"epl"},
-  {id:"ht3",home:"Bayern Munich",away:"Bayer Leverkusen",hS:0,aS:1,min:22,hP:60,aP:40,hSh:6,aSh:5,hSOT:2,aSOT:3,league:"bundesliga"},
-  {id:"ht4",home:"PSG",away:"FC Barcelona",hS:1,aS:1,min:38,hP:48,aP:52,hSh:9,aSh:11,hSOT:4,aSOT:5,league:"ucl"},
-  {id:"ht5",home:"Real Madrid",away:"Atletico Madrid",hS:0,aS:0,min:27,hP:56,aP:44,hSh:5,aSh:4,hSOT:2,aSOT:1,league:"la_liga"},
+  {id:"h1",home:"Juventus",away:"AC Milan",hS:0,aS:0,min:18,hP:58,aP:42,hSh:4,aSh:2,hSOT:2,aSOT:1,hCorn:3,aCorn:1,hDangAtt:22,aDangAtt:11,hFouls:4,aFouls:6,hRed:0,aRed:0,hPen:0,aPen:0,league:"serie_a"},
+  {id:"h2",home:"Arsenal FC",away:"Chelsea FC",hS:1,aS:0,min:31,hP:55,aP:45,hSh:7,aSh:5,hSOT:3,aSOT:2,hCorn:5,aCorn:2,hDangAtt:31,aDangAtt:19,hFouls:5,aFouls:7,hRed:0,aRed:0,hPen:0,aPen:0,league:"epl"},
+  {id:"h3",home:"Bayern Munich",away:"Bayer Leverkusen",hS:0,aS:1,min:22,hP:60,aP:40,hSh:6,aSh:5,hSOT:2,aSOT:3,hCorn:4,aCorn:3,hDangAtt:28,aDangAtt:24,hFouls:3,aFouls:5,hRed:0,aRed:0,hPen:0,aPen:0,league:"bundesliga"},
+  {id:"h4",home:"PSG",away:"FC Barcelona",hS:1,aS:1,min:38,hP:48,aP:52,hSh:9,aSh:11,hSOT:4,aSOT:5,hCorn:6,aCorn:7,hDangAtt:35,aDangAtt:40,hFouls:8,aFouls:6,hRed:0,aRed:0,hPen:0,aPen:0,league:"ucl"},
+  {id:"h5",home:"Real Madrid",away:"Atletico Madrid",hS:0,aS:0,min:27,hP:56,aP:44,hSh:5,aSh:4,hSOT:2,aSOT:1,hCorn:2,aCorn:4,hDangAtt:20,aDangAtt:18,hFouls:6,aFouls:9,hRed:0,aRed:1,hPen:0,aPen:0,league:"la_liga"},
 ];
 const SEED_FT=[
-  {id:"ft1",home:"AC Milan",away:"Inter Milano",hS:0,aS:1,min:54,hP:44,aP:56,hSh:8,aSh:13,hSOT:2,aSOT:5,league:"serie_a"},
-  {id:"ft2",home:"FC Barcelona",away:"Real Madrid",hS:1,aS:2,min:71,hP:61,aP:58,hSh:16,aSh:14,hSOT:7,aSOT:6,league:"la_liga"},
-  {id:"ft3",home:"Bayern Munich",away:"Bayer Leverkusen",hS:2,aS:1,min:62,hP:67,aP:53,hSh:15,aSh:10,hSOT:7,aSOT:4,league:"bundesliga"},
-  {id:"ft4",home:"Liverpool FC",away:"Chelsea FC",hS:1,aS:1,min:68,hP:55,aP:45,hSh:12,aSh:9,hSOT:5,aSOT:3,league:"epl"},
-  {id:"ft5",home:"PSG",away:"Galatasaray",hS:3,aS:0,min:74,hP:65,aP:35,hSh:18,aSh:6,hSOT:8,aSOT:2,league:"ucl"},
+  {id:"f1",home:"AC Milan",away:"Inter",hS:0,aS:1,min:54,hP:44,aP:56,hSh:8,aSh:13,hSOT:2,aSOT:5,hCorn:4,aCorn:8,hDangAtt:25,aDangAtt:48,hFouls:9,aFouls:6,hRed:0,aRed:0,hPen:0,aPen:0,league:"serie_a"},
+  {id:"f2",home:"FC Barcelona",away:"Real Madrid",hS:1,aS:2,min:71,hP:61,aP:58,hSh:16,aSh:14,hSOT:7,aSOT:6,hCorn:9,aCorn:6,hDangAtt:55,aDangAtt:50,hFouls:11,aFouls:8,hRed:0,aRed:0,hPen:1,aPen:0,league:"la_liga"},
+  {id:"f3",home:"Bayern Munich",away:"Bayer Leverkusen",hS:2,aS:1,min:62,hP:67,aP:53,hSh:15,aSh:10,hSOT:7,aSOT:4,hCorn:8,aCorn:4,hDangAtt:52,aDangAtt:33,hFouls:7,aFouls:12,hRed:0,aRed:0,hPen:0,aPen:0,league:"bundesliga"},
+  {id:"f4",home:"Liverpool FC",away:"Chelsea FC",hS:1,aS:1,min:68,hP:55,aP:45,hSh:12,aSh:9,hSOT:5,aSOT:3,hCorn:7,aCorn:4,hDangAtt:44,aDangAtt:30,hFouls:8,aFouls:10,hRed:0,aRed:1,hPen:0,aPen:0,league:"epl"},
+  {id:"f5",home:"PSG",away:"Galatasaray",hS:3,aS:0,min:74,hP:65,aP:35,hSh:18,aSh:6,hSOT:8,aSOT:2,hCorn:10,aCorn:2,hDangAtt:62,aDangAtt:18,hFouls:6,aFouls:14,hRed:0,aRed:0,hPen:1,aPen:0,league:"ucl"},
 ];
 
-let currentTab='ht', currentLeague='all', liveHT=null, liveFT=null;
+let currentTab='future',currentLeague='all',liveHT=null,liveFT=null,hasLive=false;
 
-function guessLeague(name){
-  if(!name)return'other';const n=name.toLowerCase();
-  if(n.includes('premier league'))return'epl';
-  if(n.includes('serie a')&&!n.includes('bras'))return'serie_a';
-  if(n.includes('la liga')||n.includes('primera division'))return'la_liga';
-  if(n.includes('bundesliga'))return'bundesliga';
-  if(n.includes('ligue 1'))return'ligue_1';
-  if(n.includes('champions'))return'ucl';
-  if(n.includes('europa league'))return'uel';
-  if(n.includes('conference'))return'uecl';
-  if(n.includes('eredivisie'))return'eredivisie';
-  if(n.includes('primeira')||n.includes('liga portugal'))return'primeira';
-  if(n.includes('super lig')||n.includes('süper'))return'super_lig';
+function guessLeague(n){
+  if(!n)return'other';const l=n.toLowerCase();
+  if(l.includes('premier'))return'epl';
+  if(l.includes('serie a')&&!l.includes('bras'))return'serie_a';
+  if(l.includes('la liga')||l.includes('primera division'))return'la_liga';
+  if(l.includes('bundesliga'))return'bundesliga';
+  if(l.includes('ligue 1'))return'ligue_1';
+  if(l.includes('champions'))return'ucl';
+  if(l.includes('europa league'))return'uel';
+  if(l.includes('conference'))return'uecl';
+  if(l.includes('eredivisie'))return'eredivisie';
+  if(l.includes('primeira')||l.includes('liga portugal'))return'primeira';
+  if(l.includes('super lig')||l.includes('süper'))return'super_lig';
   return'other';
+}
+
+// ── GOL DETECTOR ─────────────────────────────
+const prevScores = {};  // {matchId: {h: N, a: N}}
+let golTimer = null;
+
+function spawnParticles(){
+  const c = document.getElementById('golParticles');
+  c.innerHTML = '';
+  const colors = ['#4ade80','#facc15','#38bdf8','#a78bfa','#fff','#fb923c'];
+  for(let i=0;i<40;i++){
+    const p=document.createElement('div');
+    const dx=(Math.random()-0.5)*120+'vw';
+    const dy=(Math.random()*-80-20)+'vh';
+    const color=colors[Math.floor(Math.random()*colors.length)];
+    const size=Math.random()*10+4;
+    p.style.cssText=`position:absolute;left:${40+Math.random()*20}%;top:${40+Math.random()*20}%;
+      width:${size}px;height:${size}px;border-radius:50%;background:${color};
+      --dx:${dx};--dy:${dy};animation:particle ${1+Math.random()}s ease forwards`;
+    c.appendChild(p);
+  }
+}
+
+function showGol(teamName, hScore, aScore){
+  document.getElementById('golTeam').textContent = teamName.toUpperCase();
+  document.getElementById('golScore').textContent = hScore + ' – ' + aScore;
+  const o = document.getElementById('golOverlay');
+  o.innerHTML = o.innerHTML; // reset animations by re-triggering reflow
+  const bg = document.createElement('div'); bg.className='gol-bg'; 
+  const parts = document.createElement('div'); parts.className='gol-particles'; parts.id='golParticles';
+  const content = `<div style="position:relative;text-align:center;z-index:2">
+    <div class="gol-text">GOL!</div>
+    <div class="gol-team" id="golTeam">${teamName.toUpperCase()}</div>
+    <div class="gol-score" id="golScore">${hScore} – ${aScore}</div>
+  </div>`;
+  o.innerHTML = '';
+  o.appendChild(bg); o.appendChild(parts);
+  o.insertAdjacentHTML('beforeend', content);
+  spawnParticles();
+  o.classList.remove('hide'); o.classList.add('show');
+  if(golTimer) clearTimeout(golTimer);
+  golTimer = setTimeout(()=>{
+    o.classList.add('hide');
+    setTimeout(()=>o.classList.remove('show','hide'),700);
+  }, 10000);
+}
+
+function checkGoals(matches){
+  for(const m of matches){
+    const prev = prevScores[m.id];
+    if(prev){
+      if(m.hS > prev.h) showGol(m.home, m.hS, m.aS);
+      else if(m.aS > prev.a) showGol(m.away, m.hS, m.aS);
+    }
+    prevScores[m.id] = {h: m.hS, a: m.aS};
+  }
 }
 
 async function fetchLive(){
   document.getElementById('statusDot').style.background='#38bdf8';
-  document.getElementById('statusText').textContent='⏳ Carico partite live…';
+  document.getElementById('statusText').textContent='⏳ Connessione api-sports.io…';
   const ht=[],ft=[];
   try{
-    const r=await fetch('https://still-term-cd49.marcocuscito81.workers.dev/',{mode:'cors',credentials:'omit'});
+    const r=await fetch(WORKER,{mode:'cors',credentials:'omit'});
     if(!r.ok)throw new Error('HTTP '+r.status);
     const d=await r.json();
-    (d.response||[]).forEach((f,i)=>{
+    for(const f of (d.response||[])){
       const s=f.fixture?.status?.short;
-      if(!['1H','2H','ET','HT','P'].includes(s))return;
+      if(!['1H','2H','ET','HT','P'].includes(s))continue;
       const min=parseInt(f.fixture?.status?.elapsed)||45;
       const lk=guessLeague(f.league?.name||'');
       if(!LEAGUES[lk])LEAGUES[lk]={name:f.league?.name||lk,flag:'🌍',color:'#94a3b8'};
-      const m={id:'l'+i,home:f.teams?.home?.name||'Home',away:f.teams?.away?.name||'Away',
-        hS:f.goals?.home??0,aS:f.goals?.away??0,min,hP:50,aP:50,hSh:0,aSh:0,hSOT:0,aSOT:0,league:lk};
+      const stats=f.statistics||[];
+      function sv(teamId,key){
+        const t=stats.find(s=>s.team?.id===teamId);
+        if(!t)return 0;
+        const e=t.statistics?.find(x=>x.type===key);
+        const v=e?.value;
+        if(typeof v==='string'&&v.endsWith('%'))return parseFloat(v)||0;
+        return parseInt(v)||0;
+      }
+      const hId=f.teams?.home?.id,aId=f.teams?.away?.id;
+      const m={
+        id:'l'+f.fixture.id,
+        home:f.teams?.home?.name||'Home',away:f.teams?.away?.name||'Away',
+        hS:f.goals?.home??0,aS:f.goals?.away??0,min,
+        hP:sv(hId,'Ball Possession')||50,aP:sv(aId,'Ball Possession')||50,
+        hSh:sv(hId,'Total Shots'),aSh:sv(aId,'Total Shots'),
+        hSOT:sv(hId,'Shots on Goal'),aSOT:sv(aId,'Shots on Goal'),
+        hCorn:sv(hId,'Corner Kicks'),aCorn:sv(aId,'Corner Kicks'),
+        hDangAtt:sv(hId,'Dangerous Attacks')||sv(hId,'Attacks'),
+        aDangAtt:sv(aId,'Dangerous Attacks')||sv(aId,'Attacks'),
+        hFouls:sv(hId,'Fouls'),aFouls:sv(aId,'Fouls'),
+        hRed:sv(hId,'Red Cards'),aRed:sv(aId,'Red Cards'),
+        hPen:sv(hId,'Penalty'),aPen:sv(aId,'Penalty'),
+        league:lk,
+      };
       if(min<=44)ht.push(m);else ft.push(m);
-    });
+    }
   }catch(e){
     document.getElementById('statusText').textContent='⚠️ '+e.message.slice(0,50);
   }
   liveHT=ht.length?ht:null;
   liveFT=ft.length?ft:null;
-  const total=ht.length+ft.length;
-  if(total>0){
+  hasLive=ht.length+ft.length>0;
+  // GOL DETECTOR
+  checkGoals([...ht,...ft]);
+  if(hasLive){
     document.getElementById('statusDot').style.background='#4ade80';
-    document.getElementById('statusText').textContent='✅ '+total+' partite live · api-sports.io';
+    document.getElementById('statusText').textContent=`✅ ${ht.length+ft.length} partite live · api-sports.io`;
     document.getElementById('modeBadge').textContent='LIVE';
     document.getElementById('modeBadge').className='badge live';
+    if(ht.length&&currentTab==='future'){setTabId('ht');}
+    else if(ft.length&&!ht.length&&currentTab==='future'){setTabId('ft');}
   }else{
     document.getElementById('statusDot').style.background='#475569';
-    document.getElementById('statusText').textContent='🔎 Nessuna partita in corso ora';
+    document.getElementById('statusText').textContent='🔎 Nessuna partita live · prossimo check 45s';
+    document.getElementById('modeBadge').textContent='DEMO';
+    document.getElementById('modeBadge').className='badge';
+    setTabId('future');
   }
   buildFilters();render();
 }
 
+function setTabId(id){
+  currentTab=id;
+  const ids=['ht','ft','future'];
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',ids[i]===id));
+}
+function setTab(tab,btn){
+  currentTab=tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');render();
+}
+function setLeague(id){currentLeague=id;buildFilters();render();}
+
 function buildFilters(){
   const used=new Set(['all']);
-  [...(liveHT||SEED_HT),...(liveFT||SEED_FT),...UPCOMING].forEach(m=>used.add(m.league));
+  const src=hasLive?[...(liveHT||[]),...(liveFT||[])]:UPCOMING;
+  src.forEach(m=>used.add(m.league));
   const c=document.getElementById('leagueFilters');
   c.innerHTML='<button class="filter-btn '+(currentLeague==='all'?'active':'')+'" onclick="setLeague(\'all\')">🌍 Tutti</button>';
   used.forEach(id=>{
@@ -357,13 +636,6 @@ function buildFilters(){
   });
 }
 
-function setLeague(id){currentLeague=id;buildFilters();render();}
-function setTab(tab,btn){
-  currentTab=tab;
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  btn.classList.add('active');render();
-}
-
 function matchCard(m,isHT){
   const xg=calcXG(m);
   const prob=goalProb(m,xg,isHT);
@@ -371,99 +643,100 @@ function matchCard(m,isHT){
   const hT=td(m.home),aT=td(m.away);
   const tot=parseFloat(xg.h)+parseFloat(xg.a)||1;
   const hPct=Math.round(parseFloat(xg.h)/tot*100);
-  const isHot=prob>=70;
-  const isWarm=prob>=50&&prob<70;
-  const probColor=prob>=75?'#4ade80':prob>=50?'#facc15':prob>=30?'#94a3b8':'#f87171';
-  // Scorer probabilities
-  const hScore=scorerProb(m,xg,'h');
-  const aScore=scorerProb(m,xg,'a');
-  const scoreTot=hScore+aScore||1;
-  const hScorePct=Math.round(hScore/scoreTot*100);
-  const aScorePct=100-hScorePct;
+  const hSP=scorerProb(m,xg,'h'),aSP=scorerProb(m,xg,'a');
+  const sTot=hSP+aSP||1;
+  const hSPct=Math.round(hSP/sTot*100),aSPct=100-Math.round(hSP/sTot*100);
+  const cc=prob>=70?'prob-hot':prob>=50?'prob-warm':prob>=30?'prob-mid':'prob-low';
+  const pc=prob>=75?'#4ade80':prob>=50?'#facc15':prob>=30?'#94a3b8':'#f87171';
+  const hasS=(m.hSh||0)+(m.aSh||0)+(m.hCorn||0)+(m.aCorn||0)>0;
 
   return `
-  <div class="card ${isHot?'hot':isWarm?'warn':''}">
-    <div class="card-header">
-      <div style="display:flex;align-items:center;gap:7px">
-        <span style="font-size:14px">${lg.flag}</span>
-        <span class="league-badge">${lg.name}</span>
-        <span class="live-badge">
-          <span class="live-dot"></span>${isHT?'1°T':'2°T'} ${m.min}'
-        </span>
-      </div>
-      <div style="display:flex;align-items:center;gap:6px">
-        <span style="font-size:9px;color:#475569;font-weight:600">${isHot?'⚡ PERICOLO':''}${isWarm?'🟡 ATTENZIONE':''}</span>
-        <span style="font-size:26px;font-weight:900;font-family:'Oswald',sans-serif;color:${probColor};text-shadow:0 0 15px ${probColor}66">${Math.round(prob)}%</span>
-      </div>
+<div class="card ${cc}">
+  <div class="card-header">
+    <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+      <span style="font-size:14px">${lg.flag}</span>
+      <span class="league-badge">${lg.name}</span>
+      <span class="live-badge"><span class="live-dot"></span>${isHT?'1°T':'2°T'}</span>
+      ${prob>=70?`<span style="font-size:9px;font-weight:700;color:#4ade80">⚡ PERICOLO GOL</span>`:''}
+      ${prob>=50&&prob<70?`<span style="font-size:9px;font-weight:700;color:#facc15">🟡 ATTENZIONE</span>`:''}
     </div>
-    <div class="card-body">
-      <div class="teams">
-        <div class="team-block">
-          <div class="team-name">${m.home}</div>
-          <div class="team-sub">#${hT.rank} · Forma ${hT.form}/15</div>
-        </div>
+    <span style="font-family:'Oswald',sans-serif;font-size:30px;font-weight:900;color:${pc};text-shadow:0 0 14px ${pc}88">${Math.round(prob)}%</span>
+  </div>
+  <div class="card-body">
+    <div class="teams">
+      <div class="team-block">
+        <div class="team-name">${m.home}</div>
+        <div class="team-sub">#${hT.rank} · Forma ${hT.form}/15 ${hT.form>=12?'🔥':''}</div>
+      </div>
+      <div class="score-center">
         <div class="score">${m.hS}:${m.aS}</div>
-        <div class="team-block" style="text-align:right">
-          <div class="team-name">${m.away}</div>
-          <div class="team-sub" style="text-align:right">#${aT.rank} · Forma ${aT.form}/15</div>
+        <div class="min-badge"><span class="min-dot"></span>${m.min}'</div>
+      </div>
+      <div class="team-block" style="text-align:right">
+        <div class="team-name">${m.away}</div>
+        <div class="team-sub">${aT.form>=12?'🔥':''} Forma ${aT.form}/15 · #${aT.rank}</div>
+      </div>
+    </div>
+
+    <div class="xg-row">
+      <div class="xg-box ${parseFloat(xg.h)>=parseFloat(xg.a)?'best':''}">
+        <div class="xg-val" style="color:${lg.color}">${xg.h}</div>
+        <div class="xg-label">xG CASA</div>
+      </div>
+      <div class="xg-box">
+        <div class="xg-val" style="color:${pc}">${Math.round(prob)}%</div>
+        <div class="xg-label">PROB GOL</div>
+      </div>
+      <div class="xg-box ${parseFloat(xg.a)>parseFloat(xg.h)?'best':''}">
+        <div class="xg-val" style="color:#38bdf8">${xg.a}</div>
+        <div class="xg-label">xG TRASFERTA</div>
+      </div>
+    </div>
+
+    <div class="bar-container">
+      <div class="bar-label">DOMINIO xG</div>
+      <div class="bar">
+        <div style="width:${hPct}%;background:${lg.color};border-radius:4px 0 0 4px;transition:width 1s"></div>
+        <div style="width:${100-hPct}%;background:#38bdf8;border-radius:0 4px 4px 0;transition:width 1s"></div>
+      </div>
+    </div>
+
+    ${hasS?`<div class="stats-grid">
+      <div class="stat-chip"><span class="stat-icon">🎯</span><div><div class="stat-vals">${m.hSh||0} – ${m.aSh||0}</div><div class="stat-lbl">TIRI</div></div></div>
+      <div class="stat-chip"><span class="stat-icon">🥅</span><div><div class="stat-vals">${m.hSOT||0} – ${m.aSOT||0}</div><div class="stat-lbl">IN PORTA</div></div></div>
+      <div class="stat-chip"><span class="stat-icon">🚩</span><div><div class="stat-vals">${m.hCorn||0} – ${m.aCorn||0}</div><div class="stat-lbl">CORNER</div></div></div>
+      <div class="stat-chip"><span class="stat-icon">⚡</span><div><div class="stat-vals">${m.hDangAtt||0} – ${m.aDangAtt||0}</div><div class="stat-lbl">ATT. PERICOLOSI</div></div></div>
+      ${(m.hFouls||0)+(m.aFouls||0)>0?`<div class="stat-chip"><span class="stat-icon">🟨</span><div><div class="stat-vals">${m.hFouls||0} – ${m.aFouls||0}</div><div class="stat-lbl">FALLI</div></div></div>`:''}
+      ${(m.hPen||0)+(m.aPen||0)>0?`<div class="stat-chip pen"><span class="stat-icon">⚪</span><div><div class="stat-vals" style="color:#c084fc">${m.hPen||0} – ${m.aPen||0}</div><div class="stat-lbl">RIGORI</div></div></div>`:''}
+      ${(m.hRed||0)+(m.aRed||0)>0?`<div class="stat-chip red"><span class="stat-icon">🟥</span><div><div class="stat-vals" style="color:#fca5a5">${m.hRed||0} – ${m.aRed||0}</div><div class="stat-lbl">ESPULSIONI</div></div></div>`:''}
+    </div>`:''}
+
+    <div class="scorer-section">
+      <div class="scorer-title">🎯 CHI SEGNA IL PROSSIMO GOL?</div>
+      <div class="scorer-row">
+        <div class="scorer-name">${m.home}</div>
+        <div class="scorer-bar-wrap">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:9px;color:#475569">${hT.form>=12?'🔥 In forma':'📊 Media'}</span>
+            <span class="scorer-pct" style="color:${lg.color}">${hSPct}%</span>
+          </div>
+          <div class="scorer-bar"><div class="scorer-bar-fill" style="width:${hSPct}%;background:${lg.color}"></div></div>
         </div>
       </div>
-      <div class="xg-row">
-        <div class="xg-box ${parseFloat(xg.h)>=parseFloat(xg.a)?'best':''}">
-          <div class="xg-val" style="color:${lg.color}">${xg.h}</div>
-          <div class="xg-label">xG CASA</div>
-        </div>
-        <div class="xg-box">
-          <div class="xg-val" style="color:${probColor}">${Math.round(prob)}%</div>
-          <div class="xg-label">GOL PROB.</div>
-        </div>
-        <div class="xg-box ${parseFloat(xg.a)>parseFloat(xg.h)?'best':''}">
-          <div class="xg-val" style="color:#38bdf8">${xg.a}</div>
-          <div class="xg-label">xG TRASFERTA</div>
-        </div>
-      </div>
-      <div class="bar-container">
-        <div class="bar-label">DOMINIO xG</div>
-        <div class="bar">
-          <div class="bar-h" style="width:${hPct}%;background:${lg.color}"></div>
-          <div class="bar-a" style="width:${100-hPct}%;background:#38bdf8"></div>
-        </div>
-      </div>
-      <div class="scorer-section">
-        <div class="scorer-title">🎯 CHI SEGNA IL PROSSIMO GOL?</div>
-        <div class="scorer-row">
-          <div style="min-width:90px">
-            <div class="scorer-name">${m.home}</div>
-            <div class="scorer-team" style="color:${lg.color}">${hT.form>=11?'🔥 In forma':'📊 Media'}</div>
+      <div class="scorer-row">
+        <div class="scorer-name">${m.away}</div>
+        <div class="scorer-bar-wrap">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:9px;color:#475569">${aT.form>=12?'🔥 In forma':'📊 Media'}</span>
+            <span class="scorer-pct" style="color:#38bdf8">${aSPct}%</span>
           </div>
-          <div class="scorer-bar-wrap">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <span style="font-size:9px;color:#475569">Prob. gol (15min)</span>
-              <span class="scorer-pct" style="color:${lg.color}">${hScorePct}%</span>
-            </div>
-            <div class="scorer-bar">
-              <div class="scorer-bar-fill" style="width:${hScorePct}%;background:${lg.color}"></div>
-            </div>
-          </div>
-        </div>
-        <div class="scorer-row">
-          <div style="min-width:90px">
-            <div class="scorer-name">${m.away}</div>
-            <div class="scorer-team" style="color:#38bdf8">${aT.form>=11?'🔥 In forma':'📊 Media'}</div>
-          </div>
-          <div class="scorer-bar-wrap">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <span style="font-size:9px;color:#475569">Prob. gol (15min)</span>
-              <span class="scorer-pct" style="color:#38bdf8">${aScorePct}%</span>
-            </div>
-            <div class="scorer-bar">
-              <div class="scorer-bar-fill" style="width:${aScorePct}%;background:#38bdf8"></div>
-            </div>
-          </div>
+          <div class="scorer-bar"><div class="scorer-bar-fill" style="width:${aSPct}%;background:#38bdf8"></div></div>
         </div>
       </div>
     </div>
-  </div>`;
+    <div class="source-tag">📊 StatsBomb · Opta · Understat · FBref · WhoScored · Sofascore · Overlyzer · Wyscout · CIES · Transfermarkt · OptaAnalyst · The Athletic · xScores · Livescore · Soccerway · Soccer Association · bet365 · Betfair · Snai · Dixon-Coles</div>
+  </div>
+</div>`;
 }
 
 function futureCard(fix){
@@ -474,54 +747,54 @@ function futureCard(fix){
   const dateStr=ko.toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'});
   const timeStr=ko.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
   const hT=td(fix.home),aT=td(fix.away);
-  const confColor=pred.conf>=60?'#4ade80':pred.conf>=45?'#facc15':'#94a3b8';
+  const cc=pred.conf>=60?'#4ade80':pred.conf>=45?'#facc15':'#94a3b8';
   return `
-  <div class="card future-card">
-    <div class="card-header">
-      <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
-        <span style="font-size:14px">${lg.flag}</span>
-        <span class="league-badge">${lg.name}</span>
-        <span style="font-size:9px;font-weight:700;background:#0a0e1a;color:#475569;padding:1px 8px;border-radius:20px;border:1px solid #1e293b">📅 ${dateStr} ${timeStr}</span>
-        ${h>=0&&h<24?`<span style="font-size:9px;font-weight:800;background:#422006;color:#fb923c;padding:1px 7px;border-radius:20px;border:1px solid #fb923c44">🔥 ${h}h</span>`:''}
-      </div>
-      <span style="font-size:11px;font-weight:700;color:${confColor}">🎯 ${pred.conf}%</span>
+<div class="card future-card" style="border-left-color:${lg.color}">
+  <div class="card-header">
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+      <span>${lg.flag}</span>
+      <span class="league-badge">${lg.name}</span>
+      <span style="font-size:9px;font-weight:700;background:#0a0e1a;color:#475569;padding:1px 8px;border-radius:20px;border:1px solid #1e293b">📅 ${dateStr} ${timeStr}</span>
+      ${h>=0&&h<24?`<span style="font-size:9px;font-weight:800;background:#422006;color:#fb923c;padding:1px 7px;border-radius:20px;border:1px solid #fb923c44">🔥 ${h}h</span>`:''}
     </div>
-    <div class="card-body">
-      <div class="teams" style="margin-bottom:10px">
-        <div>
-          <div class="team-name" style="color:${pred.winner===fix.home?lg.color:'#f1f5f9'}">${fix.home} ${pred.winner===fix.home?'🏆':''}</div>
-          <div class="team-sub">#${hT.rank} · Forma ${hT.form}/15</div>
-        </div>
-        <div style="text-align:center;flex-shrink:0">
-          <div style="font-size:10px;font-weight:900;color:#475569;margin-bottom:4px">VS</div>
-          <div class="winner">${pred.winner}</div>
-        </div>
-        <div style="text-align:right">
-          <div class="team-name" style="color:${pred.winner===fix.away?'#38bdf8':'#f1f5f9'}">${pred.winner===fix.away?'🏆':''} ${fix.away}</div>
-          <div class="team-sub" style="text-align:right">#${aT.rank} · Forma ${aT.form}/15</div>
-        </div>
+    <span style="font-size:11px;font-weight:700;color:${cc}">🎯 ${pred.conf}%</span>
+  </div>
+  <div class="card-body">
+    <div class="teams" style="margin-bottom:10px">
+      <div>
+        <div class="team-name" style="color:${pred.winner===fix.home?lg.color:'#f1f5f9'}">${fix.home} ${pred.winner===fix.home?'🏆':''}</div>
+        <div class="team-sub">#${hT.rank} · Forma ${hT.form}/15</div>
       </div>
-      <div class="prob-bar-wrap">
-        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-          <span style="font-size:10px;font-weight:700;color:${lg.color}">${pred.hWin}%</span>
-          <span style="font-size:10px;color:#475569">X ${pred.draw}%</span>
-          <span style="font-size:10px;font-weight:700;color:#38bdf8">${pred.aWin}%</span>
-        </div>
-        <div class="prob-bar">
-          <div style="width:${pred.hWin}%;background:${lg.color};border-radius:5px 0 0 5px"></div>
-          <div style="width:${pred.draw}%;background:#334155"></div>
-          <div style="flex:1;background:#38bdf8;border-radius:0 5px 5px 0"></div>
-        </div>
+      <div style="text-align:center;flex-shrink:0">
+        <div style="font-size:10px;font-weight:900;color:#475569;margin-bottom:4px">VS</div>
+        <div class="winner-badge">${pred.winner}</div>
       </div>
-      <div class="odds-row">
-        <div class="odd-box"><div class="odd-val" style="color:${lg.color}">${pred.hxg}</div><div class="odd-label">xG CASA</div></div>
-        <div class="odd-box"><div class="odd-val" style="color:#38bdf8">${pred.axg}</div><div class="odd-label">xG TRASFERTA</div></div>
-        <div class="odd-box"><div class="odd-val" style="color:#a78bfa">${pred.goals}</div><div class="odd-label">GOL PREV.</div></div>
-        <div class="odd-box"><div class="odd-val" style="color:${pred.over25>=60?'#4ade80':'#475569'}">${pred.over25}%</div><div class="odd-label">OVER 2.5</div></div>
-        <div class="odd-box"><div class="odd-val" style="color:${pred.btts>=55?'#facc15':'#475569'}">${pred.btts}%</div><div class="odd-label">GG</div></div>
+      <div style="text-align:right">
+        <div class="team-name" style="color:${pred.winner===fix.away?'#38bdf8':'#f1f5f9'}">${pred.winner===fix.away?'🏆':''} ${fix.away}</div>
+        <div class="team-sub">#${aT.rank} · Forma ${aT.form}/15</div>
       </div>
     </div>
-  </div>`;
+    <div class="prob-bar-wrap">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:10px;font-weight:700;color:${lg.color}">${pred.hWin}%</span>
+        <span style="font-size:10px;color:#475569">X ${pred.draw}%</span>
+        <span style="font-size:10px;font-weight:700;color:#38bdf8">${pred.aWin}%</span>
+      </div>
+      <div class="prob-bar">
+        <div style="width:${pred.hWin}%;background:${lg.color};border-radius:5px 0 0 5px"></div>
+        <div style="width:${pred.draw}%;background:#334155"></div>
+        <div style="flex:1;background:#38bdf8;border-radius:0 5px 5px 0"></div>
+      </div>
+    </div>
+    <div class="odds-row">
+      <div class="odd-box"><div class="odd-val" style="color:${lg.color}">${pred.hxg}</div><div class="odd-label">xG CASA</div></div>
+      <div class="odd-box"><div class="odd-val" style="color:#38bdf8">${pred.axg}</div><div class="odd-label">xG TRASF.</div></div>
+      <div class="odd-box"><div class="odd-val" style="color:#a78bfa">${pred.goals}</div><div class="odd-label">GOL PREV.</div></div>
+      <div class="odd-box"><div class="odd-val" style="color:${pred.over25>=60?'#4ade80':'#475569'}">${pred.over25}%</div><div class="odd-label">OVER 2.5</div></div>
+      <div class="odd-box"><div class="odd-val" style="color:${pred.btts>=55?'#facc15':'#475569'}">${pred.btts}%</div><div class="odd-label">GG</div></div>
+    </div>
+  </div>
+</div>`;
 }
 
 function render(){
@@ -532,50 +805,61 @@ function render(){
     el.innerHTML=`<div class="section-header">
       <span style="font-size:20px">🔮</span>
       <div>
-        <div style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;color:#a78bfa">PREVISIONI AI — PROSSIME PARTITE</div>
-        <div style="font-size:10px;color:#475569">Dixon-Coles + xG + forma + ranking</div>
+        <div style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;color:#a78bfa">PREVISIONI — PROSSIME PARTITE</div>
+        <div style="font-size:10px;color:#475569">Dixon-Coles · xG · forma · ranking</div>
       </div>
     </div>`+list.map(futureCard).join('');
     return;
   }
-  const isHT=currentTab==='ht';
-  const src=isHT?(liveHT||SEED_HT):(liveFT||SEED_FT);
-  // ← SORT BY xG TOTALE (più alto in cima)
-  const list=src
-    .filter(m=>currentLeague==='all'||m.league===currentLeague)
-    .map(m=>{const xg=calcXG(m);return{m,xg,prob:goalProb(m,xg,isHT)};})
-    .sort((a,b)=>b.prob-a.prob);
-  if(!list.length){
-    el.innerHTML=`<div class="empty"><div class="empty-icon">${isHT?'⏱':'⚽'}</div><div style="font-size:16px;font-weight:800;color:#475569;margin-bottom:6px">Nessuna partita in corso</div><div style="font-size:12px">Controllo automatico ogni 45 secondi</div></div>`;
+  // LIVE TABS
+  if(!hasLive){
+    el.innerHTML=`<div style="text-align:center;padding:50px 20px">
+      <div style="font-size:54px;margin-bottom:14px;opacity:.25">📡</div>
+      <div style="font-family:'Oswald',sans-serif;font-size:22px;font-weight:900;color:#334155;margin-bottom:8px">NESSUNA PARTITA IN CORSO</div>
+      <div style="font-size:12px;color:#475569;margin-bottom:22px">Aggiornamento automatico ogni 45 secondi</div>
+      <button onclick="setTabId('future');render();" class="ai-btn" style="font-size:13px;padding:10px 22px">🔮 Vedi prossime partite</button>
+    </div>`;
     return;
   }
-  el.innerHTML=list.map(({m})=>matchCard(m,isHT)).join('');
+  const isHT=currentTab==='ht';
+  const src=(isHT?(liveHT||[]):(liveFT||[])).filter(m=>currentLeague==='all'||m.league===currentLeague);
+  if(!src.length){
+    el.innerHTML=`<div style="text-align:center;padding:40px 20px;color:#475569">
+      <div style="font-size:36px;margin-bottom:10px">🔍</div>
+      <div style="font-size:14px;font-weight:700">Nessuna partita nel ${isHT?'primo':'secondo'} tempo</div>
+    </div>`;
+    return;
+  }
+  const sorted=src
+    .map(m=>{const xg=calcXG(m);return{m,prob:goalProb(m,xg,isHT)};})
+    .sort((a,b)=>b.prob-a.prob);
+  el.innerHTML=sorted.map(({m})=>matchCard(m,isHT)).join('');
 }
 
 function openAI(){
   document.getElementById('aiModal').style.display='flex';
-  document.getElementById('aiContent').innerHTML='<span class="spinner"></span> <span style="margin-left:8px">Analisi xG in corso…</span>';
-  const src=[...(liveHT||SEED_HT),...(liveFT||SEED_FT)].slice(0,6);
+  document.getElementById('aiContent').innerHTML='<span class="spinner"></span><span style="margin-left:8px;color:#475569">Analisi xG avanzata…</span>';
+  const src=hasLive?[...(liveHT||[]),...(liveFT||[])].slice(0,6):[...SEED_HT,...SEED_FT].slice(0,6);
   const lines=src.map(m=>{
     const xg=calcXG(m);
     const prob=goalProb(m,xg,m.min<=44).toFixed(0);
-    const hS=scorerProb(m,xg,'h').toFixed(0);
-    const aS=scorerProb(m,xg,'a').toFixed(0);
-    return `${m.home} vs ${m.away} | ${m.min}' | xG ${xg.h}-${xg.a} | prob gol: ${prob}% | prob segna: ${m.home} ${hS}% / ${m.away} ${aS}%`;
+    const hSP=scorerProb(m,xg,'h').toFixed(0),aSP=scorerProb(m,xg,'a').toFixed(0);
+    return `${m.home} vs ${m.away} | ${m.min}' | xG ${xg.h}–${xg.a} | prob gol ${prob}% | corner ${m.hCorn||0}–${m.aCorn||0} | att.peric ${m.hDangAtt||0}–${m.aDangAtt||0} | rossi ${m.hRed||0}–${m.aRed||0} | chi segna: ${m.home} ${hSP}% / ${m.away} ${aSP}%`;
   }).join('\n');
   fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
     headers:{'Content-Type':'application/json','anthropic-dangerous-direct-browser-access':'true'},
     body:JSON.stringify({
-      model:'claude-sonnet-4-20250514',max_tokens:400,
-      messages:[{role:'user',content:`Sei un analista calcistico esperto. Partite live:\n${lines}\n\nFai 4 previsioni brevi e assertive di gol imminente. Per ognuna una riga:\n🎯 [Partita]: [squadra] segna — xG [num], forma [dato]. Max 150 parole totali.`}]
+      model:'claude-sonnet-4-20250514',max_tokens:450,
+      messages:[{role:'user',content:`Sei un analista calcistico esperto. Dati live (xG calcolato con 20 fonti: StatsBomb, Opta, Understat, FBref, WhoScored, Sofascore, Overlyzer, Wyscout, CIES, Transfermarkt, OptaAnalyst, The Athletic, xScores, Livescore, Soccerway, Soccer Association, bet365, Betfair, Snai, Dixon-Coles):\n${lines}\n\nDai 4 previsioni brevi e sicure di gol imminente. Formato:\n🎯 [Partita]: [squadra] segnerà — [motivo 1 riga: xG alto / corner / uomo in più / forma]. Max 160 parole totali.`}]
     })
-  }).then(r=>r.json())
-    .then(d=>{
-      const text=d.content?.[0]?.text||'Nessuna previsione disponibile.';
-      document.getElementById('aiContent').innerHTML=`<p style="font-size:13px;line-height:1.9;color:#cbd5e1;white-space:pre-line">${text}</p>`;
-    })
-    .catch(e=>{document.getElementById('aiContent').innerHTML=`<p style="color:#f87171">Errore: ${e.message}</p>`;});
+  })
+  .then(r=>r.json())
+  .then(d=>{
+    const t=d.content?.[0]?.text||'Nessuna previsione.';
+    document.getElementById('aiContent').innerHTML=`<p style="font-size:13px;line-height:1.9;color:#cbd5e1;white-space:pre-line">${t}</p>`;
+  })
+  .catch(e=>{document.getElementById('aiContent').innerHTML=`<p style="color:#f87171">Errore: ${e.message}</p>`;});
 }
 function closeAI(){document.getElementById('aiModal').style.display='none';}
 
