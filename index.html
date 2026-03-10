@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+
+<html lang="it">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>⚽ xG Goal Radar — Live Football</title>
+  <meta name="description" content="Previsioni gol live con modello xG avanzato. Champions League, Serie A, Premier League e tutti i campionati del mondo."/>
+  <meta name="theme-color" content="#0f172a"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>"/>
+  <!-- React + Babel -->
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#f8fafc;font-family:'Inter','Segoe UI',system-ui,sans-serif}
+    #root{min-height:100vh}
+  </style>
+</head>
+<body>
+  <div id="root"><div style="display:flex;align-items:center;justify-content:center;height:100vh;font-size:32px">⚽</div></div>
+  <script type="text/babel">
+    const { useState, useEffect, useCallback, useRef } = React;
+
+// ─── LEAGUES ──────────────────────────────────────────────────────────────────
+const LEAGUES = {
+epl:        { name: “Premier League”, flag: “🏴󠁧󠁢󠁥󠁮󠁧󠁿”, color: “#38003c” },
+serie_a:    { name: “Serie A”,        flag: “🇮🇹”,       color: “#024494” },
+la_liga:    { name: “La Liga”,        flag: “🇪🇸”,       color: “#ee8707” },
+bundesliga: { name: “Bundesliga”,     flag: “🇩🇪”,       color: “#d3010c” },
+ligue_1:    { name: “Ligue 1”,        flag: “🇫🇷”,       color: “#091c3e” },
+super_lig:  { name: “Süper Lig”,      flag: “🇹🇷”,       color: “#e30a17” },
+eredivisie: { name: “Eredivisie”,     flag: “🇳🇱”,       color: “#f36e21” },
+primeira:   { name: “Primeira Liga”,  flag: “🇵🇹”,       color: “#006600” },
+ucl:        { name: “Champions Lge”,  flag: “🏆”,         color: “#1a3c6e” },
+uel:        { name: “Europa League”,  flag: “🟠”,         color: “#f05a00” },
+uecl:       { name: “Conference Lge”, flag: “🟢”,         color: “#00843d” },
+fa_cup:      { name: “FA Cup”,          flag: “🏴󠁧󠁢󠁥󠁮󠁧󠁿”, color: “#cf0921” },
+championship:{ name: “Championship”,    flag: “🏴󠁧󠁢󠁥󠁮󠁧󠁿”, color: “#1a1a2e” },
+serie_a_br:  { name: “Serie A Brazil”,  flag: “🇧🇷”,       color: “#009c3b” },
+dfb_pokal:   { name: “DFB-Pokal”,       flag: “🇩🇪”,       color: “#000000” },
+coppa_it:    { name: “Coppa Italia”,    flag: “🇮🇹”,       color: “#009246” },
+carabao:     { name: “Carabao Cup”,     flag: “🏴󠁧󠁢󠁥󠁮󠁧󠁿”, color: “#00a651” },
+coupe_fr:    { name: “Coupe de France”, flag: “🇫🇷”,       color: “#002395” },
+copa_del_rey:{ name: “Copa del Rey”,    flag: “🇪🇸”,       color: “#aa151b” },
+liga_nos:    { name: “Liga Portugal 2”, flag: “🇵🇹”,       color: “#006600” },
+scottish_pl: { name: “Scottish Prem”,   flag: “🏴󠁧󠁢󠁳󠁣󠁴󠁿”, color: “#003087” },
+jupiler:     { name: “Jupiler Pro”,     flag: “🇧🇪”,       color: “#e30613” },
+super_lig_2: { name: “TFF 1. Lig”,      flag: “🇹🇷”,       color: “#e30a17” },
+mls:         { name: “MLS”,             flag: “🇺🇸”,       color: “#003087” },
+liga_mx:     { name: “Liga MX”,         flag: “🇲🇽”,       color: “#006847” },
+serie_b:     { name: “Serie B”,         flag: “🇮🇹”,       color: “#024494” },
+other:       { name: “Altri Camp.”,     flag: “🌍”,        color: “#475569” },
+};
+
+// ── BZZOIRO sports API (gratuita, illimitata, CORS ok) ───────────────────────
+const BSD_KEY = “1cfa969095362b1702b861a22c6c98ee986cb76a”;
+const BSD_URL = “https://sports.bzzoiro.com”;
+
+// Map league name → internal key (case-insensitive contains)
+function guessLeague(name) {
+if (!name) return “other”;
+const n = name.toLowerCase();
+if (n.includes(“premier league”) && (n.includes(“eng”) || n.includes(“england”))) return “epl”;
+if (n.includes(“premier league”))   return “epl”;
+if (n.includes(“serie a”) && (n.includes(“ital”) || n.includes(“italy”))) return “serie_a”;
+if (n.includes(“serie a”) && n.includes(“bras”)) return “serie_a_br”;
+if (n.includes(“serie a”))           return “serie_a”;
+if (n.includes(“la liga”) || n.includes(“primera division”)) return “la_liga”;
+if (n.includes(“bundesliga”) && !n.includes(“2.”)) return “bundesliga”;
+if (n.includes(“ligue 1”))           return “ligue_1”;
+if (n.includes(“champions league”))  return “ucl”;
+if (n.includes(“europa league”))     return “uel”;
+if (n.includes(“conference league”)) return “uecl”;
+if (n.includes(“eredivisie”))        return “eredivisie”;
+if (n.includes(“primeira liga”) || n.includes(“liga portugal”)) return “primeira”;
+if (n.includes(“süper lig”) || n.includes(“super lig”)) return “super_lig”;
+if (n.includes(“1. lig”) && n.includes(“turk”)) return “super_lig”;
+if (n.includes(“fa cup”))            return “fa_cup”;
+if (n.includes(“carabao”) || n.includes(“league cup”)) return “carabao”;
+if (n.includes(“coppa italia”))      return “coppa_it”;
+if (n.includes(“dfb-pokal”) || n.includes(“dfb pokal”)) return “dfb_pokal”;
+if (n.includes(“coupe de france”))   return “coupe_fr”;
+if (n.includes(“copa del rey”))      return “copa_del_rey”;
+if (n.includes(“championship”))      return “championship”;
+if (n.includes(“scottish”))          return “scottish_pl”;
+if (n.includes(“jupiler”) || (n.includes(“pro league”) && n.includes(“belg”))) return “jupiler”;
+if (n.includes(“brasileir”))         return “serie_a_br”;
+if (n.includes(“mls”))               return “mls”;
+if (n.includes(“liga mx”))           return “liga_mx”;
+// Campionati minori / giovanili / sconosciuti → “other” con nome originale
+return “other”;
+}
+
+// Ensure dynamic leagues exist in LEAGUES object at runtime
+function ensureLeague(key, name, flag) {
+if (!LEAGUES[key]) {
+LEAGUES[key] = { name: name || key, flag: flag || “🌍”, color: “#475569” };
+}
+}
+
+async function bsdFetch(path) {
+const res = await fetch(BSD_URL + path, {
+headers: { “Authorization”: “Token “ + BSD_KEY }
+});
+if (!res.ok) throw new Error(“HTTP “ + res.status);
+return res.json();
+}
+
+function bsdToMatch(ev, i) {
+const leagueName = ev.league?.name || ev.tournament?.name || ev.competition || “”;
+const leagueKey  = guessLeague(leagueName);
+ensureLeague(leagueKey, leagueName, ev.league?.flag || ev.tournament?.flag || “🌍”);
+
+const elapsed = parseInt(ev.minute || ev.time_elapsed || ev.match_time || 45) || 45;
+const stats   = ev.statistics || ev.stats || {};
+
+const hSh  = parseInt(stats.home_shots        || stats.shots_home        || 0) || Math.round(elapsed/90*12);
+const aSh  = parseInt(stats.away_shots        || stats.shots_away        || 0) || Math.round(elapsed/90*10);
+const hSOT = parseInt(stats.home_shots_on_target || stats.sot_home       || 0) || Math.round(hSh*0.4);
+const aSOT = parseInt(stats.away_shots_on_target || stats.sot_away       || 0) || Math.round(aSh*0.35);
+const hP   = parseInt(stats.home_possession   || stats.possession_home   || 0) || 50;
+const aP   = 100 - hP;
+
+return {
+id:    “bsd_” + (ev.id || i),
+home:  ev.home_team?.name || ev.home?.name || ev.home_name || “Home”,
+away:  ev.away_team?.name || ev.away?.name || ev.away_name || “Away”,
+hS:    ev.home_score ?? ev.score?.home ?? 0,
+aS:    ev.away_score ?? ev.score?.away ?? 0,
+min:   elapsed,
+hP, aP, hSh, aSh, hSOT, aSOT,
+league: leagueKey,
+odds:  ev.odds || null,
+xgH:   ev.predictions?.xg_home || ev.xg_home || null,
+xgA:   ev.predictions?.xg_away || ev.xg_away || null,
+};
+}
+const API_LEAGUE_MAP = {
+135:“serie_a”, 39:“epl”, 140:“la_liga”, 78:“bundesliga”, 61:“ligue_1”,
+94:“primeira”, 2:“ucl”, 3:“uel”, 848:“uecl”, 88:“eredivisie”,
+71:“serie_a_br”, 40:“championship”, 45:“fa_cup”, 48:“carabao”,
+137:“coppa_it”, 81:“dfb_pokal”, 66:“coupe_fr”, 143:“copa_del_rey”,
+179:“scottish_pl”, 144:“jupiler”, 203:“super_lig”,
+};
+
+// ─── TEAM INTELLIGENCE DATABASE ───────────────────────────────────────────────
+// rank: league position, gf: goals for (season), ga: goals against,
+// form: last 5 matches points (max 15), attackStrength, defenseStrength (1.0 = average)
+const TEAM_DB = {
+// Serie A
+“AC Milan”:          { rank:3,  gf:42, ga:28, form:9,  atk:1.18, def:0.88 },
+“Inter Milano”:      { rank:1,  gf:58, ga:21, form:13, atk:1.42, def:0.72 },
+“SSC Napoli”:        { rank:2,  gf:51, ga:26, form:12, atk:1.35, def:0.80 },
+“Juventus Turin”:    { rank:4,  gf:44, ga:29, form:10, atk:1.20, def:0.85 },
+“Atalanta BC”:       { rank:5,  gf:55, ga:32, form:11, atk:1.38, def:0.92 },
+“AS Roma”:           { rank:6,  gf:38, ga:34, form:8,  atk:1.10, def:0.98 },
+“Udinese Calcio”:    { rank:11, gf:29, ga:38, form:6,  atk:0.88, def:1.12 },
+// Premier League
+“Arsenal FC”:        { rank:2,  gf:55, ga:24, form:13, atk:1.38, def:0.75 },
+“Chelsea FC”:        { rank:4,  gf:48, ga:31, form:10, atk:1.25, def:0.90 },
+“Liverpool FC”:      { rank:1,  gf:61, ga:22, form:14, atk:1.48, def:0.70 },
+“Man City”:          { rank:3,  gf:52, ga:27, form:11, atk:1.32, def:0.82 },
+“Man United”:        { rank:7,  gf:35, ga:38, form:7,  atk:1.02, def:1.08 },
+“West Ham Utd”:      { rank:10, gf:30, ga:40, form:5,  atk:0.90, def:1.15 },
+// La Liga
+“FC Barcelona”:      { rank:1,  gf:62, ga:22, form:14, atk:1.50, def:0.68 },
+“Real Madrid”:       { rank:2,  gf:57, ga:25, form:12, atk:1.42, def:0.75 },
+“Atletico Madrid”:   { rank:3,  gf:46, ga:28, form:11, atk:1.22, def:0.82 },
+“Girona FC”:         { rank:8,  gf:34, ga:35, form:7,  atk:1.05, def:1.02 },
+“Sevilla FC”:        { rank:12, gf:28, ga:40, form:5,  atk:0.85, def:1.18 },
+// Bundesliga
+“Bayern Munich”:     { rank:1,  gf:65, ga:24, form:13, atk:1.52, def:0.72 },
+“Bayer Leverkusen”:  { rank:2,  gf:54, ga:28, form:12, atk:1.38, def:0.82 },
+“Borussia Dortmund”: { rank:4,  gf:46, ga:34, form:9,  atk:1.22, def:0.98 },
+“Eintracht Frkfrt”:  { rank:6,  gf:38, ga:36, form:8,  atk:1.08, def:1.04 },
+// Ligue 1
+“PSG”:               { rank:1,  gf:68, ga:20, form:14, atk:1.58, def:0.65 },
+“AS Monaco”:         { rank:2,  gf:52, ga:28, form:12, atk:1.35, def:0.82 },
+“Stade Rennais”:     { rank:7,  gf:35, ga:35, form:7,  atk:1.02, def:1.02 },
+“Olympique Lyon”:    { rank:5,  gf:42, ga:30, form:9,  atk:1.18, def:0.90 },
+// Süper Lig
+“Galatasaray”:       { rank:1,  gf:54, ga:22, form:13, atk:1.38, def:0.72 },
+“Fenerbahce”:        { rank:2,  gf:50, ga:25, form:12, atk:1.32, def:0.78 },
+“Trabzonspor”:       { rank:5,  gf:36, ga:34, form:8,  atk:1.05, def:1.00 },
+// Eredivisie
+“Feyenoord”:         { rank:1,  gf:58, ga:24, form:13, atk:1.42, def:0.75 },
+“PSV Eindhoven”:     { rank:2,  gf:55, ga:22, form:14, atk:1.40, def:0.70 },
+“Ajax”:              { rank:3,  gf:48, ga:28, form:10, atk:1.25, def:0.85 },
+“AZ Alkmaar”:        { rank:4,  gf:44, ga:30, form:9,  atk:1.18, def:0.90 },
+// Championship
+“Leeds United”:      { rank:2,  gf:48, ga:28, form:12, atk:1.25, def:0.85 },
+“Sunderland AFC”:    { rank:5,  gf:40, ga:30, form:10, atk:1.15, def:0.92 },
+“Burnley FC”:        { rank:1,  gf:52, ga:22, form:13, atk:1.32, def:0.78 },
+“Middlesbrough”:     { rank:8,  gf:34, ga:34, form:8,  atk:1.05, def:1.00 },
+“Norwich City”:      { rank:6,  gf:38, ga:30, form:9,  atk:1.10, def:0.90 },
+// Serie A Brazil
+“Flamengo”:          { rank:1,  gf:55, ga:24, form:12, atk:1.38, def:0.78 },
+“Palmeiras”:         { rank:2,  gf:50, ga:22, form:13, atk:1.32, def:0.75 },
+“Atletico Mineiro”:  { rank:3,  gf:46, ga:26, form:11, atk:1.25, def:0.82 },
+“Fluminense”:        { rank:4,  gf:40, ga:28, form:9,  atk:1.15, def:0.88 },
+// Scottish Premiership
+“Celtic FC”:         { rank:1,  gf:60, ga:18, form:14, atk:1.45, def:0.68 },
+“Rangers FC”:        { rank:2,  gf:46, ga:26, form:10, atk:1.22, def:0.84 },
+// Belgian Pro League
+“Club Brugge”:       { rank:1,  gf:52, ga:22, form:13, atk:1.35, def:0.75 },
+“Anderlecht”:        { rank:3,  gf:42, ga:28, form:9,  atk:1.18, def:0.88 },
+// Primeira Liga
+“SL Benfica”:        { rank:1,  gf:62, ga:20, form:14, atk:1.50, def:0.68 },
+“FC Porto”:          { rank:2,  gf:54, ga:24, form:12, atk:1.38, def:0.75 },
+“Sporting CP”:       { rank:3,  gf:50, ga:22, form:13, atk:1.35, def:0.72 },
+“SC Braga”:          { rank:4,  gf:42, ga:28, form:10, atk:1.18, def:0.88 },
+“Vitoria Guimaraes”: { rank:5,  gf:34, ga:32, form:8,  atk:1.05, def:1.00 },
+“Gil Vicente”:       { rank:9,  gf:26, ga:36, form:6,  atk:0.88, def:1.10 },
+// European cups — use club stats from their domestic league
+“Atletico Madrid”:   { rank:3,  gf:46, ga:28, form:11, atk:1.22, def:0.82 },
+“Villarreal CF”:     { rank:6,  gf:36, ga:32, form:8,  atk:1.08, def:0.98 },
+“Lazio”:             { rank:7,  gf:40, ga:33, form:9,  atk:1.15, def:0.96 },
+“Roma”:              { rank:6,  gf:38, ga:34, form:8,  atk:1.10, def:0.98 },
+“Tottenham”:         { rank:5,  gf:44, ga:36, form:9,  atk:1.20, def:1.02 },
+“RB Leipzig”:        { rank:3,  gf:50, ga:30, form:11, atk:1.32, def:0.88 },
+“Benfica”:           { rank:1,  gf:62, ga:20, form:14, atk:1.50, def:0.68 },
+“Porto”:             { rank:2,  gf:54, ga:24, form:12, atk:1.38, def:0.75 },
+“Celtic FC”:         { rank:1,  gf:56, ga:18, form:13, atk:1.42, def:0.70 },
+“Rangers FC”:        { rank:2,  gf:44, ga:26, form:10, atk:1.22, def:0.85 },
+“Olympiakos”:        { rank:1,  gf:38, ga:22, form:11, atk:1.15, def:0.80 },
+“Club Brugge”:       { rank:1,  gf:50, ga:24, form:12, atk:1.32, def:0.78 },
+“Shakhtar Donetsk”:  { rank:1,  gf:46, ga:22, form:11, atk:1.28, def:0.80 },
+};
+
+function teamData(name) {
+return TEAM_DB[name] || { rank:10, gf:32, ga:33, form:7, atk:1.0, def:1.0 };
+}
+
+// ─── LIVE MATCH DATA ──────────────────────────────────────────────────────────
+// First half matches (min 1–44)
+const SEED_HT = [
+{ id:“ht1”, home:“Juventus Turin”,    away:“AS Roma”,          hS:0, aS:0, min:18, hP:58, aP:42, hSh:4,  aSh:2,  hSOT:2, aSOT:1, league:“serie_a” },
+{ id:“ht2”, home:“Man United”,        away:“West Ham Utd”,     hS:1, aS:0, min:31, hP:52, aP:48, hSh:7,  aSh:5,  hSOT:3, aSOT:2, league:“epl” },
+{ id:“ht3”, home:“Borussia Dortmund”, away:“Eintracht Frkfrt”, hS:0, aS:1, min:22, hP:55, aP:45, hSh:5,  aSh:6,  hSOT:2, aSOT:3, league:“bundesliga” },
+{ id:“ht4”, home:“Atletico Madrid”,   away:“Girona FC”,        hS:0, aS:0, min:11, hP:60, aP:40, hSh:3,  aSh:1,  hSOT:1, aSOT:0, league:“la_liga” },
+{ id:“ht5”, home:“AS Monaco”,         away:“Stade Rennais”,    hS:1, aS:1, min:38, hP:50, aP:50, hSh:9,  aSh:8,  hSOT:4, aSOT:3, league:“ligue_1” },
+{ id:“ht6”, home:“Fenerbahce”,        away:“Trabzonspor”,      hS:0, aS:0, min:27, hP:53, aP:47, hSh:6,  aSh:4,  hSOT:2, aSOT:1, league:“super_lig” },
+{ id:“ht7”, home:“Feyenoord”,         away:“AZ Alkmaar”,       hS:2, aS:0, min:41, hP:62, aP:38, hSh:11, aSh:5,  hSOT:5, aSOT:1, league:“eredivisie” },
+{ id:“ht8”, home:“SSC Napoli”,        away:“Udinese Calcio”,   hS:1, aS:0, min:33, hP:64, aP:36, hSh:8,  aSh:3,  hSOT:4, aSOT:1, league:“serie_a” },
+// Primeira Liga
+{ id:“ht9”,  home:“SL Benfica”,       away:“FC Porto”,          hS:1, aS:0, min:29, hP:57, aP:43, hSh:8,  aSh:5,  hSOT:4, aSOT:2, league:“primeira” },
+{ id:“ht10”, home:“Sporting CP”,      away:“SC Braga”,          hS:0, aS:0, min:14, hP:61, aP:39, hSh:4,  aSh:2,  hSOT:2, aSOT:1, league:“primeira” },
+// Champions League
+{ id:“ht11”, home:“Bayern Munich”,    away:“Benfica”,           hS:1, aS:1, min:36, hP:58, aP:42, hSh:10, aSh:7,  hSOT:4, aSOT:3, league:“ucl” },
+{ id:“ht12”, home:“Liverpool FC”,     away:“RB Leipzig”,        hS:2, aS:0, min:22, hP:63, aP:37, hSh:9,  aSh:4,  hSOT:5, aSOT:1, league:“ucl” },
+// Europa League
+{ id:“ht13”, home:“Lazio”,            away:“Porto”,             hS:0, aS:1, min:31, hP:48, aP:52, hSh:6,  aSh:8,  hSOT:2, aSOT:4, league:“uel” },
+{ id:“ht14”, home:“Tottenham”,        away:“Sporting CP”,       hS:0, aS:0, min:18, hP:54, aP:46, hSh:5,  aSh:4,  hSOT:2, aSOT:2, league:“uel” },
+// Conference League
+{ id:“ht15”, home:“Olympiakos”,       away:“Vitoria Guimaraes”, hS:1, aS:0, min:40, hP:55, aP:45, hSh:9,  aSh:6,  hSOT:4, aSOT:2, league:“uecl” },
+{ id:“ht16”, home:“Club Brugge”,      away:“Celtic FC”,         hS:0, aS:0, min:24, hP:50, aP:50, hSh:5,  aSh:6,  hSOT:2, aSOT:3, league:“uecl” },
+];
+
+// Second half / full matches (min 45–90)
+const SEED_FT = [
+{ id:“ft1”, home:“AC Milan”,          away:“Inter Milano”,     hS:0, aS:1, min:54, hP:44, aP:56, hSh:8,  aSh:13, hSOT:2, aSOT:5, league:“serie_a” },
+{ id:“ft2”, home:“FC Barcelona”,      away:“Real Madrid”,      hS:1, aS:2, min:71, hP:61, aP:58, hSh:16, aSh:14, hSOT:7, aSOT:6, league:“la_liga” },
+{ id:“ft3”, home:“Bayern Munich”,     away:“Bayer Leverkusen”, hS:2, aS:1, min:62, hP:67, aP:53, hSh:15, aSh:10, hSOT:7, aSOT:4, league:“bundesliga” },
+{ id:“ft4”, home:“Arsenal FC”,        away:“Chelsea FC”,       hS:1, aS:1, min:38, hP:55, aP:47, hSh:9,  aSh:8,  hSOT:3, aSOT:3, league:“epl” },
+{ id:“ft5”, home:“PSG”,               away:“Olympique Lyon”,   hS:3, aS:0, min:74, hP:68, aP:40, hSh:18, aSh:7,  hSOT:8, aSOT:2, league:“ligue_1” },
+{ id:“ft6”, home:“Galatasaray”,       away:“Fenerbahce”,       hS:1, aS:0, min:58, hP:54, aP:50, hSh:11, aSh:10, hSOT:5, aSOT:4, league:“super_lig” },
+{ id:“ft7”, home:“Ajax”,              away:“PSV Eindhoven”,    hS:1, aS:1, min:66, hP:51, aP:57, hSh:13, aSh:15, hSOT:5, aSOT:7, league:“eredivisie” },
+{ id:“ft8”, home:“SSC Napoli”,        away:“Atalanta BC”,      hS:1, aS:0, min:38, hP:51, aP:59, hSh:9,  aSh:14, hSOT:4, aSOT:6, league:“serie_a” },
+// Primeira Liga
+{ id:“ft9”,  home:“FC Porto”,          away:“Gil Vicente”,       hS:2, aS:0, min:67, hP:66, aP:34, hSh:14, aSh:4,  hSOT:6, aSOT:1, league:“primeira” },
+{ id:“ft10”, home:“Vitoria Guimaraes”, away:“SL Benfica”,        hS:0, aS:1, min:53, hP:38, aP:62, hSh:7,  aSh:13, hSOT:2, aSOT:6, league:“primeira” },
+// Champions League
+{ id:“ft11”, home:“FC Barcelona”,      away:“Shakhtar Donetsk”,  hS:3, aS:1, min:72, hP:68, aP:32, hSh:18, aSh:6,  hSOT:8, aSOT:2, league:“ucl” },
+{ id:“ft12”, home:“Real Madrid”,       away:“Club Brugge”,       hS:2, aS:0, min:58, hP:65, aP:35, hSh:15, aSh:5,  hSOT:7, aSOT:1, league:“ucl” },
+// Europa League
+{ id:“ft13”, home:“Roma”,              away:“Rangers FC”,        hS:1, aS:1, min:64, hP:53, aP:47, hSh:12, aSh:10, hSOT:5, aSOT:4, league:“uel” },
+{ id:“ft14”, home:“Villarreal CF”,     away:“Celtic FC”,         hS:2, aS:1, min:79, hP:55, aP:45, hSh:13, aSh:9,  hSOT:6, aSOT:3, league:“uel” },
+// Conference League
+{ id:“ft15”, home:“Feyenoord”,         away:“Olympiakos”,        hS:1, aS:0, min:61, hP:57, aP:43, hSh:11, aSh:7,  hSOT:5, aSOT:2, league:“uecl” },
+{ id:“ft16”, home:“Sporting CP”,       away:“Lazio”,             hS:0, aS:2, min:73, hP:44, aP:56, hSh:8,  aSh:14, hSOT:3, aSOT:7, league:“uecl” },
+];
+
+// ─── COMPOSITE xG ENGINE ──────────────────────────────────────────────────────
+// Layer 1: Shot-based live xG (what’s happening on pitch right now)
+function liveXG(m) {
+const hRaw = m.hSOT * 0.30 + (m.hSh - m.hSOT) * 0.04 + (m.hP / 100) * 0.5;
+const aRaw = m.aSOT * 0.30 + (m.aSh - m.aSOT) * 0.04 + (m.aP / 100) * 0.5;
+return { h: Math.min(hRaw, 4.5), a: Math.min(aRaw, 4.5) };
+}
+
+// Layer 2: Season-model xG (Dixon-Coles style: attack × opponent defense × base)
+const LEAGUE_AVG_GOALS = 2.65; // European average goals per match
+function modelXG(m) {
+const hT = teamData(m.home), aT = teamData(m.away);
+// Expected goals if full match: home attack × away defense × league avg
+const homeExpected = hT.atk * aT.def * (LEAGUE_AVG_GOALS / 2) * 1.08; // home advantage
+const awayExpected = aT.atk * hT.def * (LEAGUE_AVG_GOALS / 2);
+return { h: homeExpected, a: awayExpected };
+}
+
+// Layer 3: Form momentum bonus (hot team gets up to +15% boost)
+function formBonus(name) {
+const t = teamData(name);
+return 1 + (t.form - 7.5) / 7.5 * 0.15; // range ~0.85–1.15
+}
+
+// Blended xG: 60% live data, 40% season model, weighted by minutes played
+function calcXG(m) {
+const minWeight = Math.min(m.min / 45, 1); // live data gains weight as match progresses
+const live  = liveXG(m);
+const model = modelXG(m);
+const fH = formBonus(m.home), fA = formBonus(m.away);
+
+const blendH = (live.h * minWeight * 0.6 + model.h * 0.4) * fH;
+const blendA = (live.a * minWeight * 0.6 + model.a * 0.4) * fA;
+return {
+h:      Math.min(blendH, 4.5).toFixed(2),
+a:      Math.min(blendA, 4.5).toFixed(2),
+liveH:  live.h.toFixed(2),
+liveA:  live.a.toFixed(2),
+modelH: model.h.toFixed(2),
+modelA: model.a.toFixed(2),
+};
+}
+
+// ─── PROBABILITY ENGINE ───────────────────────────────────────────────────────
+// Poisson P(≥1 goal) in next N minutes using blended λ
+function goalProb(m, xg, isHT) {
+const totalMin  = isHT ? 45 : 90;
+const remaining = Math.max(totalMin - m.min, 1);
+const used      = Math.max(m.min, 1);
+const totalXG   = parseFloat(xg.h) + parseFloat(xg.a);
+// Rate per minute from actual pace
+const ratePerMin = totalXG / used;
+const window = Math.min(15, remaining);
+const λ = ratePerMin * window;
+return Math.min((1 - Math.exp(-λ)) * 100, 99);
+}
+
+// Per-team scoring chance: blended xG rate + form + rank pressure
+function teamScoringProb(m, xg, side) {
+const name = side === “h” ? m.home : m.away;
+const t    = teamData(name);
+const xgVal = parseFloat(side === “h” ? xg.h : xg.a);
+const used  = Math.max(m.min, 1);
+const pace  = xgVal / used * 15; // expected in 15 min
+// Rank pressure: top-4 team scores more often in pressure situations
+const rankBoost = t.rank <= 4 ? 1.12 : t.rank <= 8 ? 1.0 : 0.90;
+const λ = pace * rankBoost * formBonus(name);
+return Math.min((1 - Math.exp(-λ)) * 100, 99);
+}
+
+// Composite “opportunity score” — higher = real danger of goal
+function opportunityScore(m, xg) {
+const hT = teamData(m.home), aT = teamData(m.away);
+// Shot conversion rate proxy
+const hConv = m.hSh > 0 ? m.hSOT / m.hSh : 0;
+const aConv = m.aSh > 0 ? m.aSOT / m.aSh : 0;
+const hScore = (parseFloat(xg.h) * 0.4 + hConv * 0.3 + hT.atk * 0.3) * formBonus(m.home);
+const aScore = (parseFloat(xg.a) * 0.4 + aConv * 0.3 + aT.atk * 0.3) * formBonus(m.away);
+return { h: hScore, a: aScore, total: hScore + aScore };
+}
+
+// Next scorer probability split
+function nextScorer(m, xg) {
+const hP = teamScoringProb(m, xg, “h”);
+const aP = teamScoringProb(m, xg, “a”);
+const tot = hP + aP || 1;
+return { hPct: Math.round(hP / tot * 100), aPct: Math.round(aP / tot * 100), hRaw: hP, aRaw: aP };
+}
+
+// ─── DEFENDER SCORING DATABASE ────────────────────────────────────────────────
+// goals, corners, set_pieces (corners/FK per game), heading (aerial %)
+const DEFENDERS = {
+// Serie A
+“Francesco Acerbi”:   { team:“Inter”,    goals:3, corners:2.1, set_pieces:3.2, heading:68 },
+“Alessandro Bastoni”: { team:“Inter”,    goals:2, corners:1.8, set_pieces:2.8, heading:58 },
+“Stefan de Vrij”:     { team:“Inter”,    goals:2, corners:1.5, set_pieces:2.2, heading:72 },
+“Giorgio Scalvini”:   { team:“Atalanta”, goals:3, corners:2.3, set_pieces:3.0, heading:62 },
+“Marten de Roon”:     { team:“Atalanta”, goals:4, corners:1.9, set_pieces:2.5, heading:55 },
+“Nikola Milenkovic”:  { team:“Inter”,    goals:3, corners:2.0, set_pieces:2.8, heading:74 },
+“Gleison Bremer”:     { team:“Juventus”, goals:2, corners:2.2, set_pieces:3.1, heading:76 },
+“Federico Gatti”:     { team:“Juventus”, goals:4, corners:2.8, set_pieces:3.5, heading:70 },
+“Juan Cuadrado”:      { team:“Inter”,    goals:1, corners:1.2, set_pieces:1.8, heading:42 },
+“Theo Hernandez”:     { team:“Milan”,    goals:5, corners:1.6, set_pieces:2.0, heading:48 },
+“Fikayo Tomori”:      { team:“Milan”,    goals:2, corners:1.4, set_pieces:2.1, heading:65 },
+“Matteo Darmian”:     { team:“Inter”,    goals:2, corners:1.3, set_pieces:2.0, heading:55 },
+“Giovanni Di Lorenzo”:{ team:“Napoli”,   goals:4, corners:2.5, set_pieces:3.8, heading:60 },
+“Amir Rrahmani”:      { team:“Napoli”,   goals:3, corners:1.8, set_pieces:2.6, heading:71 },
+“Mario Gila”:         { team:“Lazio”,    goals:2, corners:1.9, set_pieces:2.7, heading:66 },
+“Alessio Romagnoli”:  { team:“Lazio”,    goals:2, corners:1.7, set_pieces:2.4, heading:69 },
+“Patric”:             { team:“Lazio”,    goals:1, corners:1.2, set_pieces:1.8, heading:60 },
+“Lorenzo Pirola”:     { team:“Sassuolo”, goals:2, corners:1.8, set_pieces:2.5, heading:63 },
+“Martijn Kasdorp”:    { team:“Sassuolo”, goals:1, corners:1.4, set_pieces:1.9, heading:58 },
+// Premier League
+“Virgil van Dijk”:    { team:“Liverpool”,  goals:4, corners:3.2, set_pieces:4.1, heading:82 },
+“Trent Alexander-Arnold”:{ team:“Liverpool”, goals:3, corners:4.5, set_pieces:5.2, heading:52 },
+“Andrew Robertson”:   { team:“Liverpool”,  goals:2, corners:2.8, set_pieces:3.5, heading:50 },
+“Ruben Dias”:         { team:“Man City”,   goals:2, corners:2.0, set_pieces:2.8, heading:75 },
+“Manuel Akanji”:      { team:“Man City”,   goals:2, corners:1.8, set_pieces:2.5, heading:68 },
+“William Saliba”:     { team:“Arsenal”,    goals:2, corners:2.1, set_pieces:3.0, heading:72 },
+“Ben White”:          { team:“Arsenal”,    goals:2, corners:1.5, set_pieces:2.2, heading:55 },
+“Lisandro Martinez”:  { team:“Man Utd”,    goals:2, corners:1.8, set_pieces:2.6, heading:70 },
+“Luke Shaw”:          { team:“Man Utd”,    goals:2, corners:1.4, set_pieces:2.1, heading:48 },
+“Reece James”:        { team:“Chelsea”,    goals:2, corners:2.2, set_pieces:3.0, heading:55 },
+“Thiago Silva”:       { team:“Chelsea”,    goals:2, corners:1.6, set_pieces:2.3, heading:68 },
+“Cristian Romero”:    { team:“Spurs”,      goals:3, corners:2.0, set_pieces:2.9, heading:74 },
+“Micky van de Ven”:   { team:“Spurs”,      goals:1, corners:1.3, set_pieces:1.8, heading:60 },
+“Ezri Konsa”:         { team:“Aston Villa”,goals:3, corners:2.2, set_pieces:3.1, heading:70 },
+“Tyrone Mings”:       { team:“Aston Villa”,goals:2, corners:1.9, set_pieces:2.7, heading:72 },
+// La Liga
+“David Alaba”:        { team:“Real Madrid”, goals:2, corners:1.8, set_pieces:2.5, heading:65 },
+“Nacho Fernandez”:    { team:“Real Madrid”, goals:2, corners:1.5, set_pieces:2.2, heading:68 },
+“Ronald Araujo”:      { team:“Barcelona”,   goals:4, corners:2.8, set_pieces:3.6, heading:80 },
+“Inigo Martinez”:     { team:“Barcelona”,   goals:2, corners:1.7, set_pieces:2.4, heading:70 },
+“Jose Gaya”:          { team:“Valencia”,    goals:2, corners:1.6, set_pieces:2.3, heading:48 },
+// Bundesliga
+“Dayot Upamecano”:    { team:“Bayern”,      goals:2, corners:1.8, set_pieces:2.6, heading:72 },
+“Kim Min-jae”:        { team:“Bayern”,      goals:3, corners:2.1, set_pieces:2.9, heading:78 },
+“Mats Hummels”:       { team:“BVB”,         goals:3, corners:2.4, set_pieces:3.2, heading:74 },
+“Nico Schlotterbeck”: { team:“BVB”,         goals:2, corners:1.9, set_pieces:2.7, heading:68 },
+// UCL generici
+“Marquinhos”:         { team:“PSG”,         goals:5, corners:2.6, set_pieces:3.4, heading:76 },
+“Presnel Kimpembe”:   { team:“PSG”,         goals:2, corners:1.7, set_pieces:2.4, heading:70 },
+};
+
+// Get defenders for a team
+function teamDefenders(teamName) {
+return Object.entries(DEFENDERS)
+.filter(([_, d]) => d.team === teamName || teamName.includes(d.team) || d.team.includes(teamName.split(” “)[0]))
+.map(([name, d]) => ({ name, …d }));
+}
+
+// Score a defender’s chance to score in THIS match context
+function defenderGoalScore(def, m, xg, side) {
+const teamXG   = parseFloat(side === “h” ? xg.h : xg.a);
+const oppDef   = teamData(side === “h” ? m.away : m.home).def;
+const corners  = side === “h” ? m.hSh / Math.max(m.min,1) * 3 : m.aSh / Math.max(m.min,1) * 3; // proxy corners
+// Base: goals per season * team xG factor * set piece opportunities * aerial ability
+const score = (def.goals * 0.04)            // historical goal rate
++ (def.set_pieces * 0.08)        // set piece threat
++ (def.heading / 100 * 0.15)     // aerial ability
++ (teamXG * 0.12)                // team is creating chances
++ (corners * def.corners * 0.05) // corner volume
+- (oppDef * 0.08);               // opponent defensive strength
+return Math.max(0, Math.min(score * 100, 35)); // cap at 35%
+}
+
+// Top 2 defender threats per side
+function topDefenderThreats(m, xg) {
+const result = [];
+for (const side of [“h”,“a”]) {
+const teamName = side === “h” ? m.home : m.away;
+const defs = teamDefenders(teamName);
+const scored = defs.map(d => ({
+…d,
+prob: defenderGoalScore(d, m, xg, side),
+side,
+teamName,
+})).sort((a,b) => b.prob - a.prob).slice(0,2);
+result.push(…scored);
+}
+return result.sort((a,b) => b.prob - a.prob).slice(0,4);
+}
+
+// ─── FUTURE PREDICTIONS ───────────────────────────────────────────────────────
+// Upcoming fixtures (next 48h) with predicted winner, goals, xG
+const UPCOMING_FIXTURES = [
+// ── UCL Round of 16 — 1° leg: 10/11 Marzo ────────────────────────────────
+{ id:“ucl1”,  home:“Paris SG”,      away:“Chelsea”,        kickoff:“2026-03-10T20:00:00Z”, league:“ucl” },
+{ id:“ucl2”,  home:“Man City”,      away:“Real Madrid”,    kickoff:“2026-03-10T20:00:00Z”, league:“ucl” },
+{ id:“ucl3”,  home:“Atlético”,      away:“Newcastle”,      kickoff:“2026-03-11T20:00:00Z”, league:“ucl” },
+{ id:“ucl4”,  home:“Leverkusen”,    away:“Arsenal”,        kickoff:“2026-03-11T17:45:00Z”, league:“ucl” },
+{ id:“ucl5”,  home:“Galatasaray”,   away:“Liverpool”,      kickoff:“2026-03-11T20:00:00Z”, league:“ucl” },
+{ id:“ucl6”,  home:“Atalanta”,      away:“Bayern”,         kickoff:“2026-03-11T20:00:00Z”, league:“ucl” },
+{ id:“ucl7”,  home:“Barcelona”,     away:“Atlético”,       kickoff:“2026-03-10T20:00:00Z”, league:“ucl” },
+{ id:“ucl8”,  home:“Bodø/Glimt”,    away:“Sporting CP”,    kickoff:“2026-03-10T20:00:00Z”, league:“ucl” },
+// ── UCL Round of 16 — 2° leg: 17/18 Marzo ────────────────────────────────
+{ id:“ucl9”,  home:“Chelsea”,       away:“Paris SG”,       kickoff:“2026-03-17T20:00:00Z”, league:“ucl” },
+{ id:“ucl10”, home:“Real Madrid”,   away:“Man City”,       kickoff:“2026-03-17T20:00:00Z”, league:“ucl” },
+{ id:“ucl11”, home:“Newcastle”,     away:“Barcelona”,      kickoff:“2026-03-18T20:00:00Z”, league:“ucl” },
+{ id:“ucl12”, home:“Arsenal”,       away:“Leverkusen”,     kickoff:“2026-03-17T20:00:00Z”, league:“ucl” },
+{ id:“ucl13”, home:“Liverpool”,     away:“Galatasaray”,    kickoff:“2026-03-18T20:00:00Z”, league:“ucl” },
+{ id:“ucl14”, home:“Bayern”,        away:“Atalanta”,       kickoff:“2026-03-18T20:00:00Z”, league:“ucl” },
+{ id:“ucl15”, home:“Tottenham”,     away:“Atlético”,       kickoff:“2026-03-17T20:00:00Z”, league:“ucl” },
+{ id:“ucl16”, home:“Sporting CP”,   away:“Bodø/Glimt”,     kickoff:“2026-03-18T20:00:00Z”, league:“ucl” },
+// ── UEL Round of 16 — 1° leg: 12 Marzo ──────────────────────────────────
+{ id:“uel1”,  home:“Braga”,         away:“Ferencváros”,    kickoff:“2026-03-12T20:00:00Z”, league:“uel” },
+{ id:“uel2”,  home:“Real Betis”,    away:“Panathinaikos”,  kickoff:“2026-03-12T20:00:00Z”, league:“uel” },
+{ id:“uel3”,  home:“Freiburg”,      away:“Genk”,           kickoff:“2026-03-12T20:00:00Z”, league:“uel” },
+{ id:“uel4”,  home:“Lyon”,          away:“Celta Vigo”,     kickoff:“2026-03-12T20:00:00Z”, league:“uel” },
+{ id:“uel5”,  home:“Porto”,         away:“Stuttgart”,      kickoff:“2026-03-12T20:00:00Z”, league:“uel” },
+{ id:“uel6”,  home:“Midtjylland”,   away:“Nott’m Forest”,  kickoff:“2026-03-12T20:00:00Z”, league:“uel” },
+{ id:“uel7”,  home:“Roma”,          away:“Bologna”,        kickoff:“2026-03-12T20:00:00Z”, league:“uel” },
+{ id:“uel8”,  home:“Aston Villa”,   away:“Lille”,          kickoff:“2026-03-12T20:00:00Z”, league:“uel” },
+// ── UEL Round of 16 — 2° leg: 19 Marzo ──────────────────────────────────
+{ id:“uel9”,  home:“Ferencváros”,   away:“Braga”,          kickoff:“2026-03-19T20:00:00Z”, league:“uel” },
+{ id:“uel10”, home:“Panathinaikos”, away:“Real Betis”,     kickoff:“2026-03-19T20:00:00Z”, league:“uel” },
+{ id:“uel11”, home:“Genk”,          away:“Freiburg”,       kickoff:“2026-03-19T20:00:00Z”, league:“uel” },
+{ id:“uel12”, home:“Celta Vigo”,    away:“Lyon”,           kickoff:“2026-03-19T20:00:00Z”, league:“uel” },
+{ id:“uel13”, home:“Stuttgart”,     away:“Porto”,          kickoff:“2026-03-19T20:00:00Z”, league:“uel” },
+{ id:“uel14”, home:“Nott’m Forest”, away:“Midtjylland”,    kickoff:“2026-03-19T20:00:00Z”, league:“uel” },
+{ id:“uel15”, home:“Bologna”,       away:“Roma”,           kickoff:“2026-03-19T20:00:00Z”, league:“uel” },
+{ id:“uel16”, home:“Lille”,         away:“Aston Villa”,    kickoff:“2026-03-19T20:00:00Z”, league:“uel” },
+// ── UECL Round of 16 — 1° leg: 12 Marzo ─────────────────────────────────
+{ id:“uecl1”, home:“Shakhtar”,      away:“Lech Poznań”,    kickoff:“2026-03-12T18:45:00Z”, league:“uecl” },
+{ id:“uecl2”, home:“Sparta Praha”,  away:“AZ Alkmaar”,     kickoff:“2026-03-12T18:45:00Z”, league:“uecl” },
+{ id:“uecl3”, home:“AEK Larnaca”,   away:“Crystal Palace”, kickoff:“2026-03-12T18:45:00Z”, league:“uecl” },
+{ id:“uecl4”, home:“Raków”,         away:“Fiorentina”,     kickoff:“2026-03-12T18:45:00Z”, league:“uecl” },
+{ id:“uecl5”, home:“Rayo Vallecano”,away:“Samsunspor”,     kickoff:“2026-03-12T18:45:00Z”, league:“uecl” },
+{ id:“uecl6”, home:“AEK Athens”,    away:“Celje”,          kickoff:“2026-03-12T18:45:00Z”, league:“uecl” },
+{ id:“uecl7”, home:“Mainz”,         away:“Sigma Olomouc”,  kickoff:“2026-03-12T18:45:00Z”, league:“uecl” },
+{ id:“uecl8”, home:“Strasbourg”,    away:“Rijeka”,         kickoff:“2026-03-12T18:45:00Z”, league:“uecl” },
+// ── UECL Round of 16 — 2° leg: 19 Marzo ─────────────────────────────────
+{ id:“uecl9”, home:“Lech Poznań”,   away:“Shakhtar”,       kickoff:“2026-03-19T18:45:00Z”, league:“uecl” },
+{ id:“uecl10”,home:“AZ Alkmaar”,    away:“Sparta Praha”,   kickoff:“2026-03-19T18:45:00Z”, league:“uecl” },
+{ id:“uecl11”,home:“Crystal Palace”,away:“AEK Larnaca”,    kickoff:“2026-03-19T18:45:00Z”, league:“uecl” },
+{ id:“uecl12”,home:“Fiorentina”,    away:“Raków”,          kickoff:“2026-03-19T18:45:00Z”, league:“uecl” },
+{ id:“uecl13”,home:“Samsunspor”,    away:“Rayo Vallecano”, kickoff:“2026-03-19T18:45:00Z”, league:“uecl” },
+{ id:“uecl14”,home:“Celje”,         away:“AEK Athens”,     kickoff:“2026-03-19T18:45:00Z”, league:“uecl” },
+{ id:“uecl15”,home:“Sigma Olomouc”, away:“Mainz”,          kickoff:“2026-03-19T18:45:00Z”, league:“uecl” },
+{ id:“uecl16”,home:“Rijeka”,        away:“Strasbourg”,     kickoff:“2026-03-19T18:45:00Z”, league:“uecl” },
+// ── Serie A ───────────────────────────────────────────────────────────────
+{ id:“sa1”,   home:“Napoli”,        away:“Juventus”,       kickoff:“2026-03-14T17:00:00Z”, league:“serie_a” },
+{ id:“sa2”,   home:“Milan”,         away:“Inter”,          kickoff:“2026-03-15T17:00:00Z”, league:“serie_a” },
+{ id:“sa3”,   home:“Atalanta”,      away:“Roma”,           kickoff:“2026-03-15T14:30:00Z”, league:“serie_a” },
+// ── Premier League ────────────────────────────────────────────────────────
+{ id:“pl1”,   home:“Arsenal”,       away:“Everton”,        kickoff:“2026-03-14T17:30:00Z”, league:“epl” },
+{ id:“pl2”,   home:“Liverpool”,     away:“Chelsea”,        kickoff:“2026-03-15T16:30:00Z”, league:“epl” },
+{ id:“pl3”,   home:“Man Utd”,       away:“Spurs”,          kickoff:“2026-03-16T20:00:00Z”, league:“epl” },
+// ── Bundesliga ────────────────────────────────────────────────────────────
+{ id:“bl1”,   home:“Bayern”,        away:“BVB”,            kickoff:“2026-03-15T17:30:00Z”, league:“bundesliga” },
+// ── La Liga ───────────────────────────────────────────────────────────────
+{ id:“ll1”,   home:“Real Madrid”,   away:“Barcelona”,      kickoff:“2026-03-22T20:00:00Z”, league:“la_liga” },
+// ── Ligue 1 ───────────────────────────────────────────────────────────────
+{ id:“l1a”,   home:“PSG”,           away:“Lyon”,           kickoff:“2026-03-15T20:45:00Z”, league:“ligue_1” },
+];
+
+function predictMatch(fix) {
+const hT = teamData(fix.home), aT = teamData(fix.away);
+const lg = LEAGUES[fix.league];
+const leagueAvg = { epl:1.35, serie_a:1.25, la_liga:1.30, bundesliga:1.45, ligue_1:1.28, ucl:1.40 }[fix.league] || 1.30;
+const homeBonus = 1.12;
+// Dixon-Coles xG
+const hxg = +(hT.atk * aT.def * leagueAvg * homeBonus * formBonus(fix.home)).toFixed(2);
+const axg = +(aT.atk * hT.def * leagueAvg * formBonus(fix.away)).toFixed(2);
+// Poisson win probabilities
+function poissonProb(lambda, k) {
+let p = Math.exp(-lambda); for(let i=0;i<k;i++) p*=lambda/(i+1); return p;
+}
+let hWin=0, draw=0, aWin=0;
+for(let g1=0;g1<=6;g1++) for(let g2=0;g2<=6;g2++) {
+const p = poissonProb(hxg,g1)*poissonProb(axg,g2);
+if(g1>g2) hWin+=p; else if(g1===g2) draw+=p; else aWin+=p;
+}
+const tot = hWin+draw+aWin;
+const predictedGoals = +(hxg+axg).toFixed(1);
+const btts = (1-Math.exp(-hxg))*(1-Math.exp(-axg));
+const over25 = 1-poissonProb(hxg+axg,0)-poissonProb(hxg+axg,1)-poissonProb(hxg+axg,2);
+// Top defender threats for this match (simulate min=45)
+const simMatch = { …fix, hS:0,aS:0,min:45,hP:50,aP:50,hSh:6,aSh:5,hSOT:3,aSOT:2 };
+const simXg = { h:String(hxg), a:String(axg) };
+const defThreats = topDefenderThreats(simMatch, simXg);
+return {
+hxg, axg,
+hWin: Math.round(hWin/tot*100),
+draw:  Math.round(draw/tot*100),
+aWin:  Math.round(aWin/tot*100),
+predictedGoals,
+btts:  Math.round(btts*100),
+over25: Math.round(over25*100),
+defThreats,
+winner: hWin>aWin && hWin>draw ? fix.home : aWin>hWin && aWin>draw ? fix.away : “Pareggio”,
+confidence: Math.round(Math.max(hWin,draw,aWin)/tot*100),
+};
+}
+
+function FutureCard({ fix, leagueFilter }) {
+if (leagueFilter !== “all” && fix.league !== leagueFilter) return null;
+const pred = predictMatch(fix);
+const lg   = LEAGUES[fix.league] || {};
+const hT   = teamData(fix.home), aT = teamData(fix.away);
+const ko   = new Date(fix.kickoff);
+const hoursAway = Math.round((ko - Date.now()) / 3600000);
+const dateStr = ko.toLocaleDateString(“it-IT”,{weekday:“short”,day:“numeric”,month:“short”});
+const timeStr = ko.toLocaleTimeString(“it-IT”,{hour:“2-digit”,minute:“2-digit”});
+const winnerIsHome = pred.winner === fix.home;
+const isDraw = pred.winner === “Pareggio”;
+const mainColor = lg.color || “#334155”;
+
+return (
+<div style={{ background:”#fff”, border:`3.5px solid ${mainColor}22`, borderRadius:16, marginBottom:12, overflow:“hidden”, boxShadow:“0 2px 8px rgba(0,0,0,0.05)” }}>
+
+```
+  {/* Top bar */}
+  <div style={{ background:`${mainColor}0d`, borderBottom:`1px solid ${mainColor}22`, padding:"7px 14px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+    <div style={{ display:"flex", alignItems:"center", gap:7 }}>
+      <span style={{ fontSize:13 }}>{lg.flag}</span>
+      <span style={{ fontSize:10, fontWeight:600, color:"#64748b" }}>{lg.name}</span>
+      <span style={{ fontSize:9, fontWeight:800, background:"#f1f5f9", color:"#475569", padding:"1px 8px", borderRadius:20, letterSpacing:1 }}>
+        📅 {dateStr} {timeStr}
+      </span>
+      {hoursAway < 24 && <span style={{ fontSize:9, fontWeight:800, background:"#fef9c3", color:"#854d0e", padding:"1px 7px", borderRadius:20 }}>🔥 {hoursAway}h</span>}
+    </div>
+    <span style={{ fontSize:10, fontWeight:700, color: pred.confidence>=60?"#15803d":pred.confidence>=45?"#854d0e":"#64748b" }}>
+      🎯 {pred.confidence}% conf.
+    </span>
+  </div>
+
+  <div style={{ padding:"14px 14px 12px" }}>
+
+    {/* Teams + prediction */}
+    <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
+      <div style={{ flex:1 }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:8 }}>
+          <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-start", gap:2 }}>
+            <span style={{ fontSize:14, fontWeight:900, color: !isDraw&&winnerIsHome ? mainColor : "#0f172a" }}>
+              {fix.home} {!isDraw&&winnerIsHome&&"🏆"}
+            </span>
+            <span style={{ fontSize:9, color:"#94a3b8" }}>#{hT.rank} · Forma {hT.form}/15</span>
+          </div>
+          <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
+            <span style={{ fontSize:11, fontWeight:900, color:"#94a3b8", letterSpacing:2 }}>VS</span>
+            <span style={{ fontSize:10, fontWeight:800, background: isDraw?"#fef9c3":winnerIsHome?`${mainColor}22`:"#f0f9ff", color: isDraw?"#854d0e":winnerIsHome?mainColor:"#0369a1", padding:"2px 10px", borderRadius:20 }}>
+              {pred.winner}
+            </span>
+          </div>
+          <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:2 }}>
+            <span style={{ fontSize:14, fontWeight:900, color: !isDraw&&!winnerIsHome ? "#0369a1" : "#0f172a" }}>
+              {!isDraw&&!winnerIsHome&&"🏆"} {fix.away}
+            </span>
+            <span style={{ fontSize:9, color:"#94a3b8", textAlign:"right" }}>#{aT.rank} · Forma {aT.form}/15</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Win probabilities bar */}
+    <div style={{ marginBottom:12 }}>
+      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
+        <span style={{ fontSize:10, fontWeight:700, color: mainColor }}>{pred.hWin}%</span>
+        <span style={{ fontSize:10, fontWeight:600, color:"#94a3b8" }}>X {pred.draw}%</span>
+        <span style={{ fontSize:10, fontWeight:700, color:"#0369a1" }}>{pred.aWin}%</span>
+      </div>
+      <div style={{ height:10, borderRadius:5, overflow:"hidden", display:"flex", gap:2 }}>
+        <div style={{ width:`${pred.hWin}%`, background: mainColor, borderRadius:"5px 0 0 5px", transition:"width 1s" }}/>
+        <div style={{ width:`${pred.draw}%`, background:"#94a3b8" }}/>
+        <div style={{ flex:1, background:"#0ea5e9", borderRadius:"0 5px 5px 0" }}/>
+      </div>
+      <div style={{ display:"flex", justifyContent:"space-between", marginTop:2 }}>
+        <span style={{ fontSize:8, color:"#94a3b8" }}>{fix.home}</span>
+        <span style={{ fontSize:8, color:"#94a3b8" }}>Pareggio</span>
+        <span style={{ fontSize:8, color:"#94a3b8" }}>{fix.away}</span>
+      </div>
+    </div>
+
+    {/* xG + betting stats */}
+    <div style={{ display:"flex", gap:6, marginBottom:12 }}>
+      {[
+        { label:"xG Casa",      val:pred.hxg,            color: mainColor },
+        { label:"xG Trasferta", val:pred.axg,            color:"#0369a1" },
+        { label:"Gol previsti", val:pred.predictedGoals, color:"#7c3aed" },
+        { label:"Over 2.5",     val:`${pred.over25}%`,   color: pred.over25>=60?"#22c55e":"#94a3b8" },
+        { label:"Goal-Goal",    val:`${pred.btts}%`,     color: pred.btts>=55?"#f59e0b":"#94a3b8" },
+      ].map(({ label, val, color }) => (
+        <div key={label} style={{ flex:1, background:"#f8fafc", borderRadius:8, padding:"7px 5px", textAlign:"center" }}>
+          <div style={{ fontSize:13, fontWeight:900, color }}>{val}</div>
+          <div style={{ fontSize:7, color:"#94a3b8", fontWeight:600, marginTop:1 }}>{label}</div>
+        </div>
+      ))}
+    </div>
+
+    {/* Top defender threats for this match */}
+    {pred.defThreats.length > 0 && (
+      <div style={{ background:"#f8fafc", borderRadius:10, padding:"8px 10px" }}>
+        <div style={{ fontSize:9, fontWeight:800, color:"#64748b", letterSpacing:1, marginBottom:6 }}>🛡️ DIFENSORI A RISCHIO GOL</div>
+        {pred.defThreats.map((t,i) => {
+          const pct = Math.round(t.prob);
+          const barColor = pct>=20?"#f59e0b":pct>=12?"#6366f1":"#94a3b8";
+          const isHome = t.side==="h";
+          return (
+            <div key={i} style={{ display:"flex", alignItems:"center", gap:7, marginBottom:4 }}>
+              <div style={{ width:3, height:22, borderRadius:2, background: isHome?mainColor:"#0369a1", flexShrink:0 }}/>
+              <div style={{ flex:1 }}>
+                <div style={{ display:"flex", justifyContent:"space-between", marginBottom:2 }}>
+                  <span style={{ fontSize:10, fontWeight:700 }}>{t.name} <span style={{ fontSize:8, color:"#94a3b8", fontWeight:400 }}>{t.teamName}</span></span>
+                  <span style={{ fontSize:10, fontWeight:800, color:barColor }}>{pct}%</span>
+                </div>
+                <div style={{ height:3, borderRadius:2, background:"#e2e8f0" }}>
+                  <div style={{ height:"100%", width:`${Math.min(t.prob/35*100,100)}%`, background:barColor, borderRadius:2 }}/>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    )}
+  </div>
+</div>
+```
+
+);
+}
+
+// ─── COLOR SYSTEM ─────────────────────────────────────────────────────────────
+// Verde=alta, Giallo=media, Grigio=neutro, Rosso=bassa
+function danger(prob) {
+const p = parseFloat(prob);
+if (p >= 75) return { label:“⚡ MOLTO PROBABILE”, bg:”#f0fdf4”, text:”#15803d”, dot:”#22c55e”, border:”#86efac”, blink:true  };
+if (p >= 50) return { label:“🟡 PROBABILE”,       bg:”#fefce8”, text:”#854d0e”, dot:”#eab308”, border:”#fde047”, blink:false };
+if (p >= 30) return { label:“⬜ NEUTRO”,           bg:”#f8fafc”, text:”#64748b”, dot:”#94a3b8”, border:”#e2e8f0”, blink:false };
+return             { label:“🔴 POCO PROBABILE”,   bg:”#fff1f2”, text:”#be123c”, dot:”#f43f5e”, border:”#fecdd3”, blink:false };
+}
+
+// ─── COMPONENTS ───────────────────────────────────────────────────────────────
+function ProbRing({ prob }) {
+const p = Math.round(parseFloat(prob));
+const r = 30, circ = 2 * Math.PI * r;
+const offset = circ - (p / 100) * circ;
+const d = danger(p);
+return (
+<div style={{ position:“relative”, width:82, height:82, flexShrink:0 }}>
+{d.blink && (
+<div style={{ position:“absolute”, inset:-5, borderRadius:“50%”, background:`radial-gradient(circle,${d.dot}33 0%,transparent 70%)`, animation:“glowPulse 1.1s ease-in-out infinite” }}/>
+)}
+<svg width=“82” height=“82” style={{ transform:“rotate(-90deg)”, position:“relative”, zIndex:1 }}>
+<circle cx="41" cy="41" r={r} fill="none" stroke="#f1f5f9" strokeWidth="7"/>
+<circle cx=“41” cy=“41” r={r} fill=“none” stroke={d.dot} strokeWidth=“7”
+strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap=“round”
+style={{ filter:`drop-shadow(0 0 6px ${d.dot}88)`, transition:“stroke-dashoffset 1.2s ease”, animation: d.blink ? “strokeBlink 1.1s ease-in-out infinite” : “none” }}/>
+</svg>
+<div style={{ position:“absolute”, inset:0, display:“flex”, flexDirection:“column”, alignItems:“center”, justifyContent:“center”, zIndex:2, animation: d.blink ? “textBlink 1.1s ease-in-out infinite” : “none” }}>
+<span style={{ fontSize:20, fontWeight:900, color:d.text, lineHeight:1 }}>{p}%</span>
+<span style={{ fontSize:7, color: d.blink ? d.text : “#94a3b8”, fontWeight: d.blink ? 700 : 400, letterSpacing:0.5, marginTop:1 }}>GOL</span>
+</div>
+</div>
+);
+}
+
+function MiniBar({ label, h, a, hColor, aColor }) {
+const hN = parseFloat(h), aN = parseFloat(a), tot = hN + aN || 1;
+return (
+<div style={{ marginBottom:6 }}>
+<div style={{ fontSize:9, color:”#94a3b8”, letterSpacing:1, fontWeight:600, marginBottom:3 }}>{label}</div>
+<div style={{ display:“flex”, height:8, borderRadius:4, overflow:“hidden”, gap:1 }}>
+<div style={{ width:`${hN/tot*100}%`, background: hColor, display:“flex”, alignItems:“center”, justifyContent:“center”, transition:“width 0.8s ease” }}>
+{hN/tot > 0.25 && <span style={{ fontSize:7, fontWeight:800, color:”#fff” }}>{Math.round(hN/tot*100)}%</span>}
+</div>
+<div style={{ flex:1, background: aColor, display:“flex”, alignItems:“center”, justifyContent:“flex-end”, paddingRight:3, transition:“width 0.8s ease” }}>
+{aN/tot > 0.25 && <span style={{ fontSize:7, fontWeight:800, color:”#fff” }}>{Math.round(aN/tot*100)}%</span>}
+</div>
+</div>
+</div>
+);
+}
+
+function StatRow({ label, h, a }) {
+const hN = parseFloat(h) || 0, aN = parseFloat(a) || 0;
+const hW = hN >= aN;
+return (
+<div style={{ display:“grid”, gridTemplateColumns:“1fr 72px 1fr”, alignItems:“center”, gap:4, padding:“3px 0”, borderBottom:“1px solid #f8fafc” }}>
+<span style={{ fontSize:11, fontWeight: hW?700:400, color: hW?”#0f172a”:”#94a3b8”, textAlign:“right” }}>{h}</span>
+<span style={{ fontSize:9, color:”#cbd5e1”, textAlign:“center”, letterSpacing:0.5 }}>{label}</span>
+<span style={{ fontSize:11, fontWeight:!hW?700:400, color:!hW?”#0f172a”:”#94a3b8” }}>{a}</span>
+</div>
+);
+}
+
+function TeamBadge({ name, side }) {
+const t = teamData(name);
+const formPct = Math.round(t.form / 15 * 100);
+const formColor = formPct >= 70 ? “#22c55e” : formPct >= 45 ? “#eab308” : “#f43f5e”;
+return (
+<div style={{ display:“flex”, flexDirection:“column”, alignItems: side===“home”?“flex-start”:“flex-end”, gap:2 }}>
+<span style={{ fontSize:13, fontWeight:800, color:”#0f172a” }}>{name}</span>
+<div style={{ display:“flex”, alignItems:“center”, gap:4, flexDirection: side===“home”?“row”:“row-reverse” }}>
+<span style={{ fontSize:9, background:”#f1f5f9”, color:”#475569”, borderRadius:6, padding:“1px 5px”, fontWeight:700 }}>#{t.rank}</span>
+<span style={{ fontSize:9, color:formColor, fontWeight:700 }}>Forma {t.form}/15</span>
+<span style={{ fontSize:9, color:”#94a3b8” }}>{t.gf}G/{t.ga}S</span>
+</div>
+</div>
+);
+}
+
+function MatchCard({ m, xg, isHT }) {
+const totalMin  = isHT ? 45 : 90;
+const remaining = totalMin - m.min;
+const prob      = goalProb(m, xg, isHT);
+const d         = danger(prob);
+const sc        = nextScorer(m, xg);
+const opp       = opportunityScore(m, xg);
+const hDom      = parseFloat(xg.h) >= parseFloat(xg.a);
+const lg        = LEAGUES[m.league];
+const MAX       = 4.5;
+const hPct      = Math.min(parseFloat(xg.h) / MAX * 100, 100);
+const aPct      = Math.min(parseFloat(xg.a) / MAX * 100, 100);
+const xgDiff    = Math.abs(parseFloat(xg.h) - parseFloat(xg.a)).toFixed(2);
+const hTeam     = teamData(m.home);
+const aTeam     = teamData(m.away);
+
+return (
+<div style={{
+background:”#fff”,
+border:`3.5px solid ${d.border}`,
+borderRadius:16,
+marginBottom:12,
+overflow:“hidden”,
+boxShadow:“0 2px 8px rgba(0,0,0,0.06)”,
+animation: d.blink ? “cardGlow 1.1s ease-in-out infinite” : “none”,
+}}>
+
+```
+  {/* Top bar: league + live badge + danger */}
+  <div style={{ background:d.bg, borderBottom:`1px solid ${d.border}`, padding:"7px 14px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+    <div style={{ display:"flex", alignItems:"center", gap:7 }}>
+      <span style={{ fontSize:13 }}>{lg?.flag}</span>
+      <span style={{ fontSize:10, fontWeight:600, color:"#64748b" }}>{lg?.name}</span>
+      <span style={{ display:"inline-flex", alignItems:"center", gap:4, background: isHT?"#0ea5e9":"#dc2626", color:"#fff", fontSize:9, fontWeight:800, padding:"1px 8px", borderRadius:20, letterSpacing:1 }}>
+        <span style={{ width:5, height:5, borderRadius:"50%", background:"#fff", animation:"pulse 1s infinite" }}/>
+        {isHT ? `1° TEMPO ${m.min}'` : `2° TEMPO ${m.min}'`}
+      </span>
+    </div>
+    <span style={{ fontSize:10, fontWeight:700, color:d.text }}>{d.label}</span>
+  </div>
+
+  <div style={{ padding:"14px 14px 12px" }}>
+
+    {/* Teams + score + ring */}
+    <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}>
+      <div style={{ flex:1 }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:4, gap:8 }}>
+          <TeamBadge name={m.home} side="home" />
+          <div style={{ display:"flex", flexDirection:"column", alignItems:"center", flexShrink:0 }}>
+            <span style={{ fontFamily:"'Courier New',monospace", fontSize:26, fontWeight:900, color:"#0f172a", letterSpacing:4 }}>{m.hS}:{m.aS}</span>
+            <span style={{ fontSize:9, color:"#94a3b8" }}>{remaining}' {isHT?"al riposo":"al termine"}</span>
+          </div>
+          <TeamBadge name={m.away} side="away" />
+        </div>
+      </div>
+      <ProbRing prob={prob} />
+    </div>
+
+    {/* xG panel */}
+    <div style={{ background:"#f8fafc", borderRadius:12, padding:"12px 12px 10px", marginBottom:10 }}>
+
+      {/* xG numbers */}
+      <div style={{ display:"flex", alignItems:"stretch", gap:14, marginBottom:10 }}>
+        <div style={{ flex:1 }}>
+          <div style={{ display:"flex", alignItems:"baseline", gap:4, marginBottom:4 }}>
+            <span style={{ fontSize:38, fontWeight:900, color: hDom ? (lg?.color||"#0f172a") : "#94a3b8", lineHeight:1, transition:"color 0.4s" }}>{xg.h}</span>
+            <span style={{ fontSize:8, color:"#94a3b8", fontWeight:700, letterSpacing:1 }}>xG</span>
+          </div>
+          <div style={{ height:7, borderRadius:4, background:"#e2e8f0", overflow:"hidden" }}>
+            <div style={{ height:"100%", width:`${hPct}%`, background: hDom ? (lg?.color||"#334155") : "#cbd5e1", borderRadius:4, transition:"width 1s ease" }}/>
+          </div>
+          <div style={{ fontSize:8, color:"#94a3b8", marginTop:3 }}>Live {xg.liveH} · Modello {xg.modelH}</div>
+        </div>
+
+        <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:4 }}>
+          <span style={{ fontSize:9, color:"#cbd5e1", fontWeight:700 }}>VS</span>
+          <span style={{ fontSize:10, fontWeight:800, color:"#475569", background:"#e2e8f0", padding:"1px 7px", borderRadius:8 }}>Δ{xgDiff}</span>
+        </div>
+
+        <div style={{ flex:1 }}>
+          <div style={{ display:"flex", alignItems:"baseline", justifyContent:"flex-end", gap:4, marginBottom:4 }}>
+            <span style={{ fontSize:8, color:"#94a3b8", fontWeight:700, letterSpacing:1 }}>xG</span>
+            <span style={{ fontSize:38, fontWeight:900, color: !hDom ? "#0f172a" : "#94a3b8", lineHeight:1, transition:"color 0.4s" }}>{xg.a}</span>
+          </div>
+          <div style={{ height:7, borderRadius:4, background:"#e2e8f0", overflow:"hidden", display:"flex", justifyContent:"flex-end" }}>
+            <div style={{ height:"100%", width:`${aPct}%`, background: !hDom ? "#0f172a" : "#cbd5e1", borderRadius:4, transition:"width 1s ease" }}/>
+          </div>
+          <div style={{ fontSize:8, color:"#94a3b8", marginTop:3, textAlign:"right" }}>Live {xg.liveA} · Modello {xg.modelA}</div>
+        </div>
+      </div>
+
+      {/* Probability bars */}
+      <MiniBar
+        label="CHI SEGNA DOPO (opportunità reale)"
+        h={opp.h} a={opp.a}
+        hColor={lg?.color||"#334155"} aColor="#334155"
+      />
+      <MiniBar
+        label="PROB. GOL PER SQUADRA (15 min)"
+        h={sc.hRaw} a={sc.aRaw}
+        hColor="#7c3aed" aColor="#0ea5e9"
+      />
+
+      {/* Team strength comparison */}
+      <div style={{ display:"flex", gap:6, marginTop:8 }}>
+        {[
+          { label:"Attacco", hV:hTeam.atk, aV:aTeam.atk },
+          { label:"Difesa",  hV:(2-hTeam.def), aV:(2-aTeam.def) },
+          { label:"Forma",   hV:hTeam.form/15, aV:aTeam.form/15 },
+        ].map(({ label, hV, aV }) => {
+          const tot = hV + aV || 1;
+          const hPctBar = Math.round(hV / tot * 100);
+          const aPctBar = 100 - hPctBar;
+          const better = hV >= aV;
+          return (
+            <div key={label} style={{ flex:1, background:"#fff", borderRadius:8, padding:"6px 7px", border:"1px solid #f1f5f9" }}>
+              <div style={{ fontSize:8, color:"#94a3b8", fontWeight:600, marginBottom:4 }}>{label}</div>
+              <div style={{ height:5, borderRadius:3, overflow:"hidden", display:"flex" }}>
+                <div style={{ width:`${hPctBar}%`, background: better ? (lg?.color||"#334155") : "#cbd5e1", borderRadius:"3px 0 0 3px" }}/>
+                <div style={{ flex:1, background: !better ? "#0f172a" : "#e2e8f0", borderRadius:"0 3px 3px 0" }}/>
+              </div>
+              <div style={{ display:"flex", justifyContent:"space-between", marginTop:2 }}>
+                <span style={{ fontSize:8, fontWeight:700, color: better?"#0f172a":"#94a3b8" }}>{hPctBar}%</span>
+                <span style={{ fontSize:8, fontWeight:700, color:!better?"#0f172a":"#94a3b8" }}>{aPctBar}%</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+
+    {/* Live stats */}
+    <StatRow label="Tiri"     h={m.hSh}  a={m.aSh} />
+    <StatRow label="In porta" h={m.hSOT} a={m.aSOT} />
+    <StatRow label="Possesso" h={`${m.hP}%`} a={`${m.aP}%`} />
+
+    {/* Defender goal threats */}
+    {(() => {
+      const threats = topDefenderThreats(m, xg);
+      if (threats.length === 0) return null;
+      return (
+        <div style={{ marginTop:10, background:"#f8fafc", borderRadius:12, padding:"10px 12px" }}>
+          <div style={{ fontSize:9, fontWeight:800, color:"#64748b", letterSpacing:1, marginBottom:8 }}>
+            🛡️ DIFENSORI A RISCHIO GOL
+          </div>
+          <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
+            {threats.map((t, i) => {
+              const probRound = Math.round(t.prob);
+              const barColor = probRound >= 20 ? "#f59e0b" : probRound >= 12 ? "#6366f1" : "#94a3b8";
+              const isHome = t.side === "h";
+              const teamColor = isHome ? (lg?.color || "#334155") : "#0f172a";
+              return (
+                <div key={i} style={{ display:"flex", alignItems:"center", gap:8 }}>
+                  <div style={{ width:3, height:28, borderRadius:2, background:teamColor, flexShrink:0 }}/>
+                  <div style={{ flex:1 }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:2 }}>
+                      <div>
+                        <span style={{ fontSize:11, fontWeight:700, color:"#0f172a" }}>{t.name}</span>
+                        <span style={{ fontSize:9, color:"#94a3b8", marginLeft:5 }}>{t.teamName}</span>
+                      </div>
+                      <div style={{ display:"flex", alignItems:"center", gap:5 }}>
+                        <span style={{ fontSize:9, color:"#64748b" }}>
+                          {t.goals}⚽ · {t.heading}% testa · {t.set_pieces.toFixed(1)} pall.inatt.
+                        </span>
+                        <span style={{ fontSize:11, fontWeight:800, color:barColor, minWidth:32, textAlign:"right" }}>
+                          {probRound}%
+                        </span>
+                      </div>
+                    </div>
+                    <div style={{ height:4, borderRadius:2, background:"#e2e8f0", overflow:"hidden" }}>
+                      <div style={{ height:"100%", width:`${Math.min(t.prob/35*100,100)}%`, background:barColor, borderRadius:2, transition:"width 1s ease" }}/>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ fontSize:8, color:"#cbd5e1", marginTop:6, textAlign:"right" }}>
+            Basato su: gol stagionali · duel aerei · palle inattive · xG squadra
+          </div>
+        </div>
+      );
+    })()}
+  </div>
+</div>
+```
+
+);
+}
+
+// ─── AI MODAL ─────────────────────────────────────────────────────────────────
+function AIModal({ htMatches, ftMatches, onClose }) {
+const [text, setText] = useState(””);
+const [loading, setLoading] = useState(true);
+
+useEffect(() => {
+const all = […htMatches, …ftMatches].slice(0, 8);
+const lines = all.map(({ m, xg, isHT }) => {
+const prob = goalProb(m, xg, isHT).toFixed(0);
+const sc   = nextScorer(m, xg);
+const hT   = teamData(m.home), aT = teamData(m.away);
+const lg   = LEAGUES[m.league]?.name || “”;
+return `${lg} | ${isHT?"1°T":"2°T"} ${m.min}' | ${m.home}(#${hT.rank},forma${hT.form}) ${m.hS}-${m.aS} ${m.away}(#${aT.rank},forma${aT.form}) | xG ${xg.h}-${xg.a} | prob gol: ${prob}% | prossimo: ${m.home} ${sc.hPct}% vs ${m.away} ${sc.aPct}%`;
+}).join(”\n”);
+
+```
+fetch("https://api.anthropic.com/v1/messages", {
+  method:"POST", headers:{"Content-Type":"application/json"},
+  body: JSON.stringify({
+    model:"claude-sonnet-4-20250514", max_tokens:550,
+    messages:[{ role:"user", content:`Sei il migliore analista calcistico al mondo, specializzato in previsione gol con modelli xG avanzati. Dati partite live:\n\n${lines}\n\nFai 5 previsioni PRECISE di gol imminente. Per ognuna:\n🎯 [Squadra A vs Squadra B]: [CHI segna] con [X]% probabilità — perché: xG [numero], forma [dato], rank [dato].\nSii assertivo, usa i dati numerici. Max 200 parole.` }]
+  })
+}).then(r=>r.json())
+  .then(d=>{ setText(d.content?.[0]?.text||"N/A"); setLoading(false); })
+  .catch(()=>{ setText("Errore API."); setLoading(false); });
+```
+
+}, []);
+
+return (
+<div style={{ position:“fixed”, inset:0, background:“rgba(15,23,42,0.75)”, zIndex:99, display:“flex”, alignItems:“center”, justifyContent:“center”, padding:16, backdropFilter:“blur(4px)” }} onClick={onClose}>
+<div style={{ background:”#fff”, borderRadius:20, padding:26, maxWidth:500, width:“100%”, boxShadow:“0 25px 60px rgba(0,0,0,0.2)”, maxHeight:“85vh”, overflowY:“auto” }} onClick={e=>e.stopPropagation()}>
+<div style={{ display:“flex”, justifyContent:“space-between”, alignItems:“center”, marginBottom:16 }}>
+<div>
+<div style={{ fontSize:9, color:”#7c3aed”, letterSpacing:2, fontWeight:700, marginBottom:2 }}>PREVISIONI AI · xG + RANKING + FORMA</div>
+<div style={{ fontSize:17, fontWeight:900, color:”#0f172a” }}>⚽ Gol in arrivo?</div>
+</div>
+<button onClick={onClose} style={{ background:”#f1f5f9”, border:“none”, color:”#64748b”, cursor:“pointer”, borderRadius:10, padding:“6px 11px”, fontSize:16 }}>✕</button>
+</div>
+{loading
+? <div style={{ display:“flex”, gap:10, alignItems:“center”, color:”#64748b”, fontSize:13 }}>
+<div style={{ width:18, height:18, border:“2px solid #e2e8f0”, borderTopColor:”#7c3aed”, borderRadius:“50%”, animation:“spin 0.7s linear infinite” }}/>
+Analisi xG + modello stagionale in corso…
+</div>
+: <p style={{ color:”#334155”, fontSize:13.5, lineHeight:1.85, whiteSpace:“pre-line” }}>{text}</p>
+}
+</div>
+</div>
+);
+}
+
+// ─── MAIN APP ─────────────────────────────────────────────────────────────────
+function App() {
+const [xgMapHT,   setXgMapHT]   = useState({});
+const [xgMapFT,   setXgMapFT]   = useState({});
+const [liveHT,    setLiveHT]    = useState(null); // null = use SEED
+const [liveFT,    setLiveFT]    = useState(null);
+const [league,    setLeague]    = useState(“all”);
+const [section,   setSection]   = useState(“ht”);
+const [updated,   setUpdated]   = useState(new Date());
+const [showAI,    setShowAI]    = useState(false);
+const [apiError,   setApiError]   = useState(””);
+const [apiStatus,  setApiStatus]  = useState(“idle”);
+const [dataMode,  setDataMode]  = useState(“empty”);
+const timerRef     = useRef(null);
+const countdownRef = useRef(null);
+const [countdown,  setCountdown] = useState(45);
+
+// ── CLAUDE AI LIVE FETCH ─────────────────────────────────────────────────
+// Uses Claude’s web_search to find live matches and parse them into our format
+// ── LIVE FETCH: API-Football + Claude AI fallback ───────────────────────
+const FA_CUP_FIXTURES = [
+{ id:“fac1”, home:“Wolverhampton W.”, away:“Liverpool FC”,    kickoff:“2026-03-06T20:00:00Z”, hS:0, aS:0 },
+{ id:“fac2”, home:“Mansfield Town”,   away:“Arsenal FC”,      kickoff:“2026-03-07T12:15:00Z”, hS:0, aS:0 },
+{ id:“fac3”, home:“Wrexham AFC”,      away:“Chelsea FC”,      kickoff:“2026-03-07T17:45:00Z”, hS:0, aS:0 },
+{ id:“fac4”, home:“Newcastle Utd”,    away:“Man City”,        kickoff:“2026-03-07T20:00:00Z”, hS:0, aS:0 },
+{ id:“fac5”, home:“Fulham FC”,        away:“Southampton FC”,  kickoff:“2026-03-08T12:00:00Z”, hS:0, aS:0 },
+{ id:“fac6”, home:“Port Vale”,        away:“Sunderland AFC”,  kickoff:“2026-03-08T13:30:00Z”, hS:0, aS:0 },
+{ id:“fac7”, home:“Leeds United”,     away:“Norwich City”,    kickoff:“2026-03-08T16:30:00Z”, hS:0, aS:0 },
+{ id:“fac8”, home:“West Ham Utd”,     away:“Brentford FC”,    kickoff:“2026-03-09T19:30:00Z”, hS:0, aS:0 },
+];
+
+function getLiveMinute(kickoffUTC) {
+const elapsed = Math.floor((Date.now() - new Date(kickoffUTC).getTime()) / 60000);
+if (elapsed < 0)    return -1;
+if (elapsed <= 45)  return elapsed;
+if (elapsed <= 60)  return 45;
+if (elapsed <= 105) return elapsed - 15;
+return -2;
+}
+
+function buildFaCupMatch(fix) {
+const min = getLiveMinute(fix.kickoff);
+if (min < 1 || min > 90) return null;
+const hT = teamData(fix.home), aT = teamData(fix.away);
+const pace = min / 90;
+return {
+…fix, min, league:“fa_cup”,
+hP:   hT.atk >= aT.atk ? 54 : 46,
+aP:   hT.atk >= aT.atk ? 46 : 54,
+hSh:  Math.max(1, Math.round(pace * 13 * hT.atk)),
+aSh:  Math.max(1, Math.round(pace * 11 * aT.atk)),
+hSOT: Math.max(0, Math.round(pace * 5  * hT.atk)),
+aSOT: Math.max(0, Math.round(pace * 4  * aT.atk)),
+};
+}
+
+function apiToMatch(f, stats, i) {
+const leagueKey = API_LEAGUE_MAP[f.league?.id] || “epl”;
+const elapsed   = f.fixture?.status?.elapsed || 45;
+const hId = f.teams?.home?.id, aId = f.teams?.away?.id;
+function getStat(teamId, name) {
+const team = (stats || []).find(s => s.team?.id === teamId);
+const val  = team?.statistics?.find(s => s.type === name)?.value;
+if (val === null || val === undefined || val === “”) return null;
+return parseInt(String(val).replace(”%”,””)) || 0;
+}
+const hP  = getStat(hId, “Ball Possession”) ?? 50;
+const aP  = 100 - hP;
+const hSh = getStat(hId, “Total Shots”)   ?? Math.round(elapsed/90*12);
+const aSh = getStat(aId, “Total Shots”)   ?? Math.round(elapsed/90*10);
+const hSOT= getStat(hId, “Shots on Goal”) ?? Math.round(hSh*0.4);
+const aSOT= getStat(aId, “Shots on Goal”) ?? Math.round(aSh*0.35);
+return {
+id: “apif_” + (f.fixture?.id || i),
+home:  f.teams?.home?.name || “Home”,
+away:  f.teams?.away?.name || “Away”,
+hS:    f.goals?.home ?? 0,
+aS:    f.goals?.away ?? 0,
+min: elapsed, hP, aP, hSh, aSh, hSOT, aSOT,
+league: leagueKey,
+};
+}
+
+const fetchLive = useCallback(async () => {
+setApiStatus(“loading”);
+const ht = [], ft = [];
+
+```
+// 1. FA Cup via kickoff-time engine
+FA_CUP_FIXTURES.forEach(fix => {
+  const m = buildFaCupMatch(fix);
+  if (!m) return;
+  if (m.min <= 44) ht.push(m); else ft.push(m);
+});
+
+// 2. Claude AI web search — unica fonte funzionante nel browser
+// 2. Cloudflare Worker proxy → api-sports.io (CORS risolto)
+const WORKER_URL = "https://still-term-cd49.marcocuscito81.workers.dev/";
+let gotLive = false;
+try {
+  const r = await fetch(WORKER_URL, {
+    method: "GET",
+    mode: "cors",
+    credentials: "omit",
+    headers: { "Accept": "application/json" }
+  });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  const d = await r.json();
+  const fixtures = d.response || [];
+  fixtures.forEach((f, i) => {
+    const status = f.fixture?.status?.short;
+    if (!["1H","2H","ET","HT","P"].includes(status)) return;
+    const elapsed = f.fixture?.status?.elapsed || 45;
+    const leagueName = f.league?.name || "";
+    const leagueKey = guessLeague(leagueName);
+    // Mappa paese → flag emoji
+    const countryFlags = { Portugal:"🇵🇹", Turkey:"🇹🇷", "Czech-Republic":"🇨🇿", Czech:"🇨🇿", Spain:"🇪🇸", Italy:"🇮🇹", Germany:"🇩🇪", France:"🇫🇷", England:"🏴󠁧󠁢󠁥󠁮󠁧󠁿", Brazil:"🇧🇷", Netherlands:"🇳🇱", Belgium:"🇧🇪", Argentina:"🇦🇷", USA:"🇺🇸", Mexico:"🇲🇽", Scotland:"🏴󠁧󠁢󠁳󠁣󠁴󠁿" };
+    const countryFlag = countryFlags[f.league?.country] || "🌍";
+    ensureLeague(leagueKey, leagueName || leagueKey, countryFlag);
+    const match = {
+      id: "apif_" + (f.fixture?.id || i),
+      home: f.teams?.home?.name || "Home",
+      away: f.teams?.away?.name || "Away",
+      hS: f.goals?.home ?? 0,
+      aS: f.goals?.away ?? 0,
+      min: parseInt(elapsed) || 45,
+      hP: 50, aP: 50, hSh: 0, aSh: 0, hSOT: 0, aSOT: 0,
+      league: leagueKey,
+    };
+    if (match.min <= 44) ht.push(match); else ft.push(match);
+  });
+  gotLive = fixtures.length > 0;
+  setApiError("");
+} catch(e) {
+  setApiError("Worker: " + e.message.slice(0, 60));
+}
+
+setLiveHT(ht.length > 0 ? ht : null);
+setLiveFT(ft.length > 0 ? ft : null);
+setDataMode(ht.length + ft.length > 0 ? "live" : "empty");
+setApiStatus("ok");
+```
+
+}, []);
+
+const compute = useCallback((key) => {
+const ht = {}, ft = {};
+(liveHT || []).forEach(m => { ht[m.id] = calcXG(m); });
+(liveFT || []).forEach(m => { ft[m.id] = calcXG(m); });
+setXgMapHT(ht);
+setXgMapFT(ft);
+setUpdated(new Date());
+}, [liveHT, liveFT]);
+
+useEffect(() => { /* no demo preload */ }, []);
+useEffect(() => { compute(); }, [liveHT, liveFT]);
+
+// Refresh ogni 60s — Claude AI è lento ma accurato
+useEffect(() => {
+fetchLive();
+timerRef.current = setInterval(() => { fetchLive(); setCountdown(45); }, 45000);
+countdownRef.current = setInterval(() => { setCountdown(prev => prev > 0 ? prev - 1 : 45); }, 1000);
+return () => { clearInterval(timerRef.current); clearInterval(countdownRef.current); };
+}, [fetchLive]);
+
+function buildList(seed, xgMap, isHT) {
+const src = isHT ? (liveHT || []) : (liveFT || []);
+return src
+.filter(m => {
+const xg = xgMap[m.id];
+if (!xg) return false;
+if (parseFloat(xg.h) < 0.2 && parseFloat(xg.a) < 0.2) return false;
+if (league !== “all” && m.league !== league) return false;
+return true;
+})
+.map(m => ({ m, xg: xgMap[m.id] || calcXG(m), isHT }))
+.sort((a, b) => goalProb(b.m, b.xg, isHT) - goalProb(a.m, a.xg, isHT));
+}
+
+const htList = buildList(SEED_HT, xgMapHT, true);
+const ftList = buildList(SEED_FT, xgMapFT, false);
+const allList = […htList, …ftList];
+
+const topProbHT = htList.length > 0 ? goalProb(htList[0].m, htList[0].xg, true).toFixed(0) : 0;
+const topProbFT = ftList.length > 0 ? goalProb(ftList[0].m, ftList[0].xg, false).toFixed(0) : 0;
+
+return (
+<div style={{ minHeight:“100vh”, background:”#f8fafc”, color:”#0f172a”, fontFamily:”‘Inter’,‘Segoe UI’,system-ui,sans-serif”, paddingBottom:48 }}>
+<style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap'); @keyframes spin        { to { transform:rotate(360deg) } } @keyframes pulse       { 0%,100%{opacity:1} 50%{opacity:.3} } @keyframes glowPulse   { 0%,100%{opacity:.5;transform:scale(1)} 50%{opacity:1;transform:scale(1.1)} } @keyframes strokeBlink { 0%,100%{opacity:1} 50%{opacity:.4} } @keyframes textBlink   { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.65;transform:scale(1.07)} } @keyframes cardGlow    { 0%,100%{box-shadow:0 2px 8px rgba(0,0,0,0.06)} 50%{box-shadow:0 2px 8px rgba(0,0,0,0.06),0 0 0 5px rgba(34,197,94,0.28)} } * { box-sizing:border-box; margin:0; padding:0 } ::-webkit-scrollbar { height:3px; width:3px } ::-webkit-scrollbar-thumb { background:#e2e8f0; border-radius:2px } button { font-family:inherit }`}</style>
+
+```
+  {/* ── HEADER ── */}
+  <div style={{ background:"#fff", borderBottom:"1px solid #e2e8f0", position:"sticky", top:0, zIndex:20, boxShadow:"0 1px 4px rgba(0,0,0,0.05)" }}>
+    <div style={{ maxWidth:620, margin:"0 auto", padding:"14px 14px 0" }}>
+
+      {/* Title row */}
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+        <div>
+          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:1 }}>
+            <h1 style={{ fontSize:21, fontWeight:900, color:"#0f172a", letterSpacing:"-0.5px" }}>⚽ xG Goal Radar</h1>
+            {dataMode === "live"
+              ? <span style={{ fontSize:9, fontWeight:700, background:"#dcfce7", color:"#15803d", padding:"2px 7px", borderRadius:20, letterSpacing:1 }}>LIVE</span>
+              : <span style={{ fontSize:9, fontWeight:700, background:"#fef9c3", color:"#854d0e", padding:"2px 7px", borderRadius:20, letterSpacing:1 }}>DEMO</span>
+            }
+          </div>
+          <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+            <span style={{ fontSize:9, color:"#94a3b8" }}>{updated.toLocaleTimeString("it-IT")} · xG live + modello + forma + ranking</span>
+            <span style={{ display:"inline-flex", alignItems:"center", gap:4, background: countdown <= 3 ? "#fef9c3" : "#f0fdf4", borderRadius:10, padding:"1px 7px" }}>
+              <span style={{ width:5, height:5, borderRadius:"50%", background: countdown <= 3 ? "#eab308" : "#22c55e", display:"inline-block", animation:"pulse 1s infinite" }}/>
+              <span style={{ fontSize:9, fontWeight:700, color: countdown <= 3 ? "#854d0e" : "#15803d" }}>↻ {countdown}s</span>
+            </span>
+          </div>
+        </div>
+        <div style={{ display:"flex", gap:7 }}>
+          <button onClick={() => { fetchLive(); compute(); }} style={{ background:"#f1f5f9", border:"1px solid #e2e8f0", color:"#475569", borderRadius:9, padding:"7px 12px", cursor:"pointer", fontSize:14, fontWeight:800 }}>↻</button>
+          <button onClick={()=>setShowAI(true)} style={{ background:"#7c3aed", border:"none", color:"#fff", borderRadius:9, padding:"7px 14px", cursor:"pointer", fontSize:12, fontWeight:700, boxShadow:"0 2px 8px rgba(124,58,237,0.35)" }}>🤖 Prevedi</button>
+        </div>
+      </div>
+
+      {/* AI Status bar */}
+      <div style={{ background: apiStatus==="loading" ? "#f0f9ff" : dataMode==="live" ? "#f0fdf4" : "#f8fafc", border:`1.5px solid ${apiStatus==="loading"?"#bae6fd":dataMode==="live"?"#86efac":"#e2e8f0"}`, borderRadius:12, padding:"8px 14px", marginBottom:10, display:"flex", alignItems:"center", justifyContent:"space-between", gap:7 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:7 }}>
+          <span style={{ width:8, height:8, borderRadius:"50%", background: apiStatus==="loading"?"#0ea5e9":dataMode==="live"?"#22c55e":"#94a3b8", display:"inline-block", animation:"pulse 1s infinite", flexShrink:0 }}/>
+          <span style={{ fontSize:11, fontWeight:700, color: apiStatus==="loading"?"#0369a1":dataMode==="live"?"#15803d":"#64748b" }}>
+            {dataMode === "searching" || apiStatus === "loading"
+            ? "⏳ Carico partite live…"
+            : dataMode === "live"
+              ? `✅ ${(liveHT||[]).length + (liveFT||[]).length} partite live · api-sports.io · ${updated.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}`
+              : "🔎 Nessuna partita in corso ora"}
+          {apiError && <span style={{fontSize:9,color:"#f43f5e",marginLeft:5}}>({apiError})</span>}
+          {apiError && <span style={{fontSize:9,color:"#f43f5e",marginLeft:6}}>({apiError})</span>}
+          </span>
+        </div>
+        <span style={{ fontSize:9, color:"#94a3b8" }}>↻ {countdown}s</span>
+      </div>
+
+      {/* Legend */}
+      <div style={{ display:"flex", gap:10, marginBottom:10, flexWrap:"wrap" }}>
+        {[["#22c55e","⚡ Molto prob. ≥75%",true],["#eab308","🟡 Probabile ≥50%",false],["#94a3b8","⬜ Neutro ≥30%",false],["#f43f5e","🔴 Poco prob. <30%",false]].map(([c,l,blink])=>(
+          <div key={l} style={{ display:"flex", alignItems:"center", gap:4 }}>
+            <span style={{ width:8, height:8, borderRadius:"50%", background:c, display:"inline-block", animation:blink?"strokeBlink 1.1s infinite":"none", boxShadow:blink?`0 0 5px ${c}`:"none" }}/>
+            <span style={{ fontSize:9, color:"#64748b" }}>{l}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* League filter */}
+      <div style={{ display:"flex", gap:5, overflowX:"auto", paddingBottom:10 }}>
+        <button onClick={()=>setLeague("all")} style={{ whiteSpace:"nowrap", padding:"4px 11px", borderRadius:20, cursor:"pointer", fontSize:11, fontWeight:700, border: league==="all"?"1.5px solid #7c3aed":"1.5px solid #e2e8f0", background: league==="all"?"#ede9fe":"#fff", color: league==="all"?"#7c3aed":"#64748b" }}>🌍 Tutti</button>
+        {Object.entries(LEAGUES).map(([id,l])=>(
+          <button key={id} onClick={()=>setLeague(id)} style={{ whiteSpace:"nowrap", padding:"4px 10px", borderRadius:20, cursor:"pointer", fontSize:11, fontWeight:700, transition:"all .15s", border: league===id?`1.5px solid ${l.color}`:"1.5px solid #e2e8f0", background: league===id?`${l.color}14`:"#fff", color: league===id?l.color:"#64748b" }}>{l.flag}</button>
+        ))}
+      </div>
+
+      {/* ── BIG SECTION TABS ── */}
+      <div style={{ display:"flex", gap:0, marginTop:2 }}>
+        <button
+          onClick={()=>setSection("ht")}
+          style={{
+            flex:1, padding:"14px 0", border:"none", cursor:"pointer",
+            background: section==="ht" ? "#fff" : "#f8fafc",
+            borderTop: section==="ht" ? "3px solid #0ea5e9" : "3px solid transparent",
+            borderBottom: section==="ht" ? "none" : "2px solid #e2e8f0",
+            transition:"all .2s",
+          }}
+        >
+          <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:3 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+              <span style={{ fontSize:16 }}>⏱</span>
+              <span style={{ fontSize:15, fontWeight:900, color: section==="ht"?"#0ea5e9":"#94a3b8", letterSpacing:"-0.3px" }}>PRIMO TEMPO</span>
+            </div>
+            <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+              <span style={{ fontSize:11, fontWeight:700, color: section==="ht"?"#0f172a":"#94a3b8" }}>{htList.length} partite</span>
+              <span style={{ fontSize:11, fontWeight:800, color: section==="ht"?"#22c55e":"#94a3b8", background: section==="ht"?"#f0fdf4":"transparent", padding:"0 6px", borderRadius:10 }}>Top {topProbHT}%</span>
+            </div>
+          </div>
+        </button>
+
+        <div style={{ width:1, background:"#e2e8f0" }}/>
+
+        <button
+          onClick={()=>setSection("ft")}
+          style={{
+            flex:1, padding:"14px 0", border:"none", cursor:"pointer",
+            background: section==="ft" ? "#fff" : "#f8fafc",
+            borderTop: section==="ft" ? "3px solid #dc2626" : "3px solid transparent",
+            borderBottom: section==="ft" ? "none" : "2px solid #e2e8f0",
+            transition:"all .2s",
+          }}
+        >
+          <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:3 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+              <span style={{ fontSize:16 }}>⚽</span>
+              <span style={{ fontSize:15, fontWeight:900, color: section==="ft"?"#dc2626":"#94a3b8", letterSpacing:"-0.3px" }}>SECONDO TEMPO</span>
+            </div>
+            <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+              <span style={{ fontSize:11, fontWeight:700, color: section==="ft"?"#0f172a":"#94a3b8" }}>{ftList.length} partite</span>
+              <span style={{ fontSize:11, fontWeight:800, color: section==="ft"?"#22c55e":"#94a3b8", background: section==="ft"?"#f0fdf4":"transparent", padding:"0 6px", borderRadius:10 }}>Top {topProbFT}%</span>
+            </div>
+          </div>
+        </button>
+
+        <div style={{ width:1, background:"#e2e8f0" }}/>
+
+        <button
+          onClick={()=>setSection("future")}
+          style={{
+            flex:1, padding:"14px 0", border:"none", cursor:"pointer",
+            background: section==="future" ? "#fff" : "#f8fafc",
+            borderTop: section==="future" ? "3px solid #7c3aed" : "3px solid transparent",
+            borderBottom: section==="future" ? "none" : "2px solid #e2e8f0",
+            transition:"all .2s",
+          }}
+        >
+          <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:3 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+              <span style={{ fontSize:16 }}>🔮</span>
+              <span style={{ fontSize:13, fontWeight:900, color: section==="future"?"#7c3aed":"#94a3b8", letterSpacing:"-0.3px" }}>PROSSIME</span>
+            </div>
+            <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+              <span style={{ fontSize:11, fontWeight:700, color: section==="future"?"#0f172a":"#94a3b8" }}>{UPCOMING_FIXTURES.length} partite</span>
+              <span style={{ fontSize:9, fontWeight:800, color: section==="future"?"#7c3aed":"#94a3b8", background: section==="future"?"#ede9fe":"transparent", padding:"0 6px", borderRadius:10 }}>AI</span>
+            </div>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  {/* ── MATCH LIST ── */}
+  <div style={{ maxWidth:620, margin:"0 auto", padding:"14px 12px" }}>
+    {section === "future" ? (
+      <div>
+        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14, padding:"10px 14px", background:"#ede9fe", borderRadius:12 }}>
+          <span style={{ fontSize:20 }}>🔮</span>
+          <div>
+            <div style={{ fontSize:13, fontWeight:800, color:"#5b21b6" }}>Previsioni AI — Prossime partite</div>
+            <div style={{ fontSize:10, color:"#7c3aed" }}>Probabilità calcolate con modello Dixon-Coles + xG + forma + ranking</div>
+          </div>
+        </div>
+        {UPCOMING_FIXTURES
+          .filter(f => league === "all" || f.league === league)
+          .sort((a,b) => new Date(a.kickoff) - new Date(b.kickoff))
+          .map(fix => <FutureCard key={fix.id} fix={fix} leagueFilter="all" />)
+        }
+      </div>
+    ) : section === "ht" ? (
+      htList.length === 0 ? (
+        <div style={{ textAlign:"center", padding:"64px 20px" }}>
+          <div style={{ fontSize:52, marginBottom:16 }}>⏱</div>
+          <div style={{ fontSize:16, fontWeight:800, color:"#475569", marginBottom:6 }}>
+            {apiStatus === "loading" ? "Carico partite…" : "Nessun primo tempo in corso"}
+          </div>
+          <div style={{ fontSize:12, color:"#94a3b8", lineHeight:1.7 }}>
+            {apiStatus === "loading"
+              ? "Connessione ad API-Football in corso…"
+              : "Al momento non ci sono partite nel primo tempo.\nControllo automatico ogni 10 secondi."}
+          </div>
+          <div style={{ marginTop:20, display:"inline-flex", alignItems:"center", gap:6, background:"#f0fdf4", border:"1px solid #86efac", borderRadius:20, padding:"6px 14px" }}>
+            <span style={{ width:7, height:7, borderRadius:"50%", background:"#22c55e", display:"inline-block", animation:"pulse 1s infinite" }}/>
+            <span style={{ fontSize:11, fontWeight:700, color:"#15803d" }}>Prossimo controllo in {countdown}s</span>
+          </div>
+        </div>
+      ) : htList.map(({ m, xg }) => <MatchCard key={m.id} m={m} xg={xg} isHT={true} />)
+    ) : (
+      ftList.length === 0 ? (
+        <div style={{ textAlign:"center", padding:"64px 20px" }}>
+          <div style={{ fontSize:52, marginBottom:16 }}>⚽</div>
+          <div style={{ fontSize:16, fontWeight:800, color:"#475569", marginBottom:6 }}>
+            {apiStatus === "loading" ? "Carico partite…" : "Nessun secondo tempo in corso"}
+          </div>
+          <div style={{ fontSize:12, color:"#94a3b8", lineHeight:1.7 }}>
+            {apiStatus === "loading"
+              ? "Connessione ad API-Football in corso…"
+              : "Al momento non ci sono partite nel secondo tempo.\nControllo automatico ogni 10 secondi."}
+          </div>
+          <div style={{ marginTop:20, display:"inline-flex", alignItems:"center", gap:6, background:"#f0fdf4", border:"1px solid #86efac", borderRadius:20, padding:"6px 14px" }}>
+            <span style={{ width:7, height:7, borderRadius:"50%", background:"#22c55e", display:"inline-block", animation:"pulse 1s infinite" }}/>
+            <span style={{ fontSize:11, fontWeight:700, color:"#15803d" }}>Prossimo controllo in {countdown}s</span>
+          </div>
+        </div>
+      ) : ftList.map(({ m, xg }) => <MatchCard key={m.id} m={m} xg={xg} isHT={false} />)
+    )}
+  </div>
+
+  {showAI && <AIModal htMatches={htList} ftMatches={ftList} onClose={()=>setShowAI(false)} />}
+</div>
+```
+
+);
+}
+
+```
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+```
+
+  </script>
+</body>
+</html>
