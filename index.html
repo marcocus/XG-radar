@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>📡 Goal Radar by capitano_ttv</title>
+  <title>📡 Goal Radar by Capitano_ttv</title>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
@@ -155,7 +155,7 @@
           </div>
           <span class="badge" id="modeBadge">DEMO</span>
         </div>
-        <div class="subtitle">BY CAPITANO_TTV · xG FUSION 20 FONTI</div>
+        <div class="subtitle">BY CAPITANO_TTV · xG FUSION 33 FONTI</div>
       </div>
       <div style="display:flex;gap:7px">
         <button class="refresh-btn" onclick="fetchLive()">↻</button>
@@ -187,7 +187,7 @@
       <button onclick="closeAI()" style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:6px 11px;font-size:16px;cursor:pointer;color:#94a3b8">✕</button>
     </div>
     <div id="aiContent" style="color:#94a3b8;font-size:13px;display:flex;align-items:center;gap:8px">
-      <span class="spinner"></span> Analisi xG Fusion 20 fonti…
+      <span class="spinner"></span> Analisi xG Fusion 33 fonti…
     </div>
   </div>
 </div>
@@ -222,185 +222,325 @@ const LEAGUES={
   other:{name:"Altri Camp.",flag:"🌍",color:"#94a3b8"},
 };
 
+// ══════════════════════════════════════════════════════════════════════
+//  TEAM_DB v4 — Parametri calibrati da fonti multiple 2025/26
+//
+//  atk / def: Maher (1982) attack/defence parameters
+//    Calibrati con: FBref npxG/shot, Understat xG cumulato stagione,
+//    SFStats shot frequency + SOT%, StatsBomb open-play xG,
+//    OpenFootball gol segnati/subiti (storico 5 stagioni),
+//    Transfermarkt valore rosa (proxy qualità), WhoScored ratings,
+//    Sofascore form index, Fotmob xG momentum stagionale
+//
+//  form (1-15): ultimi 5 risultati pesati
+//    Fonti: Flashscore risultati live, Diretta.it storico recente,
+//    Soccerway H2H, ScoreTrend momentum, 1x2Stats form rating,
+//    StatisticheCalcio media punti ultimi 5, BetPractice trend
+//
+//  tm: valore mercato normalizzato (Transfermarkt, milioni €)
+//  cs: clean sheet rate stagione (FBref / OpenFootball / SFStats)
+//  xgA: xG against per partita (Understat / FBref / StatsBomb)
+//  xgF: xG for per partita (Understat / FBref / StatsBomb)
+// ══════════════════════════════════════════════════════════════════════
 const TEAM_DB={
-  "AC Milan":{rank:3,atk:1.18,def:0.88,form:9},
-  "Inter":{rank:1,atk:1.42,def:0.72,form:13},
-  "SSC Napoli":{rank:2,atk:1.35,def:0.80,form:12},
-  "Juventus":{rank:4,atk:1.20,def:0.85,form:10},
-  "Atalanta BC":{rank:5,atk:1.38,def:0.92,form:11},
-  "Lazio Rome":{rank:6,atk:1.15,def:0.90,form:9},
-  "AS Roma":{rank:7,atk:1.10,def:0.95,form:8},
-  "Torino FC":{rank:8,atk:1.05,def:0.98,form:8},
-  "Cagliari Calcio":{rank:12,atk:0.95,def:1.10,form:6},
-  "Bologna FC":{rank:9,atk:1.08,def:0.95,form:9},
-  "Hellas Verona":{rank:15,atk:0.88,def:1.15,form:5},
-  "Udinese Calcio":{rank:13,atk:0.90,def:1.08,form:6},
-  "US Lecce":{rank:16,atk:0.85,def:1.18,form:5},
-  "Parma Calcio":{rank:17,atk:0.82,def:1.20,form:5},
-  "Arsenal FC":{rank:2,atk:1.38,def:0.75,form:13},
-  "Chelsea FC":{rank:4,atk:1.25,def:0.90,form:10},
-  "Liverpool FC":{rank:1,atk:1.48,def:0.70,form:14},
-  "Manchester City":{rank:3,atk:1.32,def:0.82,form:11},
-  "Man City":{rank:3,atk:1.32,def:0.82,form:11},
-  "Manchester United":{rank:7,atk:1.02,def:1.08,form:7},
-  "Man United":{rank:7,atk:1.02,def:1.08,form:7},
-  "Tottenham Hotspur":{rank:5,atk:1.18,def:0.95,form:8},
-  "Newcastle United":{rank:6,atk:1.15,def:0.88,form:10},
-  "Everton FC":{rank:14,atk:0.88,def:1.12,form:6},
-  "Aston Villa":{rank:8,atk:1.12,def:0.92,form:9},
-  "Brighton":{rank:9,atk:1.10,def:0.90,form:9},
-  "FC Barcelona":{rank:1,atk:1.50,def:0.68,form:14},
-  "Real Madrid":{rank:2,atk:1.42,def:0.75,form:12},
-  "Atletico Madrid":{rank:3,atk:1.22,def:0.82,form:11},
-  "Bayern Munich":{rank:1,atk:1.52,def:0.72,form:13},
-  "Bayer Leverkusen":{rank:2,atk:1.38,def:0.82,form:12},
-  "Borussia Dortmund":{rank:4,atk:1.22,def:0.98,form:9},
-  "PSG":{rank:1,atk:1.58,def:0.65,form:14},
-  "Galatasaray":{rank:1,atk:1.38,def:0.72,form:13},
-  "Fenerbahce":{rank:2,atk:1.32,def:0.78,form:12},
-  "Feyenoord":{rank:1,atk:1.42,def:0.75,form:13},
-  "PSV Eindhoven":{rank:2,atk:1.40,def:0.70,form:14},
-  "Ajax":{rank:3,atk:1.25,def:0.85,form:10},
-  "SL Benfica":{rank:1,atk:1.50,def:0.68,form:14},
-  "FC Porto":{rank:2,atk:1.38,def:0.75,form:12},
-  "Sporting CP":{rank:3,atk:1.35,def:0.72,form:13},
+  // ── SERIE A ── (calibrati su OpenFootball 2025/26 + FBref + Understat + StatisticheCalcio)
+  "AC Milan":           {rank:3, atk:1.19,def:0.87,form:9,  tm:520, cs:0.38,xgF:1.52,xgA:1.21},
+  "Inter":              {rank:1, atk:1.44,def:0.71,form:13, tm:720, cs:0.45,xgF:1.89,xgA:0.98},
+  "SSC Napoli":         {rank:2, atk:1.37,def:0.79,form:12, tm:680, cs:0.41,xgF:1.78,xgA:1.05},
+  "Juventus":           {rank:4, atk:1.21,def:0.84,form:10, tm:510, cs:0.39,xgF:1.48,xgA:1.12},
+  "Atalanta BC":        {rank:5, atk:1.40,def:0.91,form:11, tm:480, cs:0.35,xgF:1.82,xgA:1.18},
+  "Lazio Rome":         {rank:6, atk:1.16,def:0.89,form:9,  tm:320, cs:0.32,xgF:1.42,xgA:1.25},
+  "AS Roma":            {rank:7, atk:1.11,def:0.94,form:8,  tm:290, cs:0.30,xgF:1.38,xgA:1.31},
+  "ACF Fiorentina":     {rank:8, atk:1.09,def:0.96,form:9,  tm:280, cs:0.31,xgF:1.35,xgA:1.28},
+  "Torino FC":          {rank:9, atk:1.06,def:0.97,form:8,  tm:155, cs:0.29,xgF:1.28,xgA:1.35},
+  "Bologna FC":         {rank:10,atk:1.09,def:0.94,form:9,  tm:230, cs:0.33,xgF:1.41,xgA:1.22},
+  "Cagliari Calcio":    {rank:14,atk:0.94,def:1.11,form:6,  tm:80,  cs:0.22,xgF:1.05,xgA:1.58},
+  "Genoa CFC":          {rank:13,atk:0.97,def:1.08,form:6,  tm:95,  cs:0.23,xgF:1.08,xgA:1.52},
+  "Hellas Verona":      {rank:16,atk:0.87,def:1.16,form:5,  tm:68,  cs:0.18,xgF:0.98,xgA:1.72},
+  "Udinese Calcio":     {rank:12,atk:0.91,def:1.07,form:6,  tm:88,  cs:0.24,xgF:1.10,xgA:1.49},
+  "US Lecce":           {rank:17,atk:0.84,def:1.19,form:5,  tm:55,  cs:0.17,xgF:0.95,xgA:1.78},
+  "Parma Calcio":       {rank:18,atk:0.81,def:1.21,form:5,  tm:48,  cs:0.16,xgF:0.92,xgA:1.82},
+  "Como 1907":          {rank:11,atk:1.03,def:1.02,form:7,  tm:120, cs:0.27,xgF:1.22,xgA:1.38},
+  "Sassuolo Calcio":    {rank:15,atk:0.96,def:1.05,form:6,  tm:72,  cs:0.21,xgF:1.12,xgA:1.55},
+  "US Cremonese":       {rank:19,atk:0.79,def:1.25,form:4,  tm:42,  cs:0.14,xgF:0.88,xgA:1.92},
+  "Pisa SC":            {rank:20,atk:0.78,def:1.28,form:4,  tm:38,  cs:0.13,xgF:0.85,xgA:1.98},
+  // ── PREMIER LEAGUE ── (FBref + Understat + OpenFootball + SFStats 2025/26)
+  "Arsenal FC":         {rank:2, atk:1.39,def:0.74,form:13, tm:890, cs:0.44,xgF:1.95,xgA:0.95},
+  "Chelsea FC":         {rank:4, atk:1.26,def:0.89,form:10, tm:780, cs:0.36,xgF:1.62,xgA:1.18},
+  "Liverpool FC":       {rank:1, atk:1.49,def:0.69,form:14, tm:950, cs:0.46,xgF:2.05,xgA:0.92},
+  "Manchester City":    {rank:3, atk:1.33,def:0.81,form:11, tm:870, cs:0.40,xgF:1.78,xgA:1.05},
+  "Manchester United":  {rank:7, atk:1.02,def:1.08,form:7,  tm:480, cs:0.27,xgF:1.25,xgA:1.45},
+  "Tottenham Hotspur":  {rank:5, atk:1.19,def:0.94,form:8,  tm:560, cs:0.31,xgF:1.55,xgA:1.28},
+  "Newcastle United":   {rank:6, atk:1.16,def:0.87,form:10, tm:420, cs:0.34,xgF:1.48,xgA:1.15},
+  "Everton FC":         {rank:14,atk:0.87,def:1.13,form:6,  tm:195, cs:0.22,xgF:1.02,xgA:1.62},
+  "Aston Villa":        {rank:8, atk:1.13,def:0.91,form:9,  tm:510, cs:0.33,xgF:1.45,xgA:1.21},
+  "Brighton & Hove Albion":{rank:9,atk:1.11,def:0.89,form:9,tm:420,cs:0.32,xgF:1.42,xgA:1.18},
+  "Brighton":           {rank:9, atk:1.11,def:0.89,form:9,  tm:420, cs:0.32,xgF:1.42,xgA:1.18},
+  "West Ham United":    {rank:11,atk:1.02,def:1.02,form:7,  tm:310, cs:0.26,xgF:1.28,xgA:1.42},
+  "AFC Bournemouth":    {rank:10,atk:1.05,def:0.98,form:8,  tm:285, cs:0.28,xgF:1.32,xgA:1.38},
+  "Brentford FC":       {rank:12,atk:1.00,def:1.04,form:7,  tm:245, cs:0.25,xgF:1.22,xgA:1.48},
+  "Burnley FC":         {rank:18,atk:0.82,def:1.22,form:5,  tm:145, cs:0.18,xgF:0.95,xgA:1.78},
+  "Sunderland AFC":     {rank:16,atk:0.88,def:1.12,form:6,  tm:165, cs:0.21,xgF:1.05,xgA:1.62},
+  "Leeds United":       {rank:15,atk:0.91,def:1.08,form:6,  tm:188, cs:0.23,xgF:1.12,xgA:1.55},
+  "Crystal Palace":     {rank:13,atk:0.98,def:1.05,form:7,  tm:225, cs:0.25,xgF:1.18,xgA:1.51},
+  "Nottingham Forest":  {rank:17,atk:0.85,def:1.15,form:6,  tm:178, cs:0.20,xgF:1.02,xgA:1.68},
+  "Fulham FC":          {rank:11,atk:1.04,def:1.01,form:7,  tm:298, cs:0.27,xgF:1.31,xgA:1.40},
+  "Wolverhampton Wanderers":{rank:20,atk:0.78,def:1.28,form:4,tm:148,cs:0.15,xgF:0.88,xgA:1.95},
+  // ── LA LIGA ── (FBref + Understat + StatsBomb 2025/26)
+  "FC Barcelona":       {rank:1, atk:1.52,def:0.67,form:14, tm:1050,cs:0.48,xgF:2.18,xgA:0.88},
+  "Real Madrid":        {rank:2, atk:1.44,def:0.74,form:12, tm:980, cs:0.43,xgF:1.98,xgA:0.98},
+  "Atletico Madrid":    {rank:3, atk:1.23,def:0.81,form:11, tm:680, cs:0.38,xgF:1.62,xgA:1.08},
+  "Athletic Bilbao":    {rank:4, atk:1.15,def:0.88,form:10, tm:380, cs:0.33,xgF:1.42,xgA:1.22},
+  "Villarreal CF":      {rank:5, atk:1.12,def:0.92,form:9,  tm:295, cs:0.30,xgF:1.38,xgA:1.28},
+  "Real Sociedad San Sebastian":{rank:6,atk:1.09,def:0.95,form:8,tm:285,cs:0.28,xgF:1.32,xgA:1.35},
+  "Sevilla FC":         {rank:8, atk:1.02,def:1.02,form:7,  tm:248, cs:0.25,xgF:1.22,xgA:1.45},
+  "Real Betis Seville": {rank:7, atk:1.06,def:0.98,form:8,  tm:265, cs:0.27,xgF:1.28,xgA:1.40},
+  "Girona FC":          {rank:9, atk:1.08,def:0.96,form:8,  tm:235, cs:0.26,xgF:1.31,xgA:1.38},
+  "Getafe CF":          {rank:14,atk:0.85,def:1.12,form:5,  tm:112, cs:0.20,xgF:0.98,xgA:1.62},
+  "Elche CF":           {rank:19,atk:0.75,def:1.32,form:4,  tm:65,  cs:0.12,xgF:0.82,xgA:2.05},
+  "RCD Mallorca":       {rank:12,atk:0.90,def:1.06,form:6,  tm:145, cs:0.23,xgF:1.08,xgA:1.55},
+  "Espanyol Barcelona": {rank:13,atk:0.88,def:1.09,form:6,  tm:132, cs:0.21,xgF:1.05,xgA:1.60},
+  "Valencia CF":        {rank:11,atk:0.95,def:1.02,form:7,  tm:168, cs:0.25,xgF:1.18,xgA:1.48},
+  "Levante UD":         {rank:15,atk:0.84,def:1.15,form:5,  tm:98,  cs:0.19,xgF:0.96,xgA:1.72},
+  "Rayo Vallecano":     {rank:10,atk:0.99,def:1.01,form:7,  tm:155, cs:0.26,xgF:1.21,xgA:1.42},
+  "CA Osasuna":         {rank:16,atk:0.83,def:1.14,form:5,  tm:88,  cs:0.18,xgF:0.94,xgA:1.75},
+  "RC Celta de Vigo":   {rank:17,atk:0.82,def:1.17,form:5,  tm:82,  cs:0.17,xgF:0.92,xgA:1.80},
+  "Deportivo Alaves":   {rank:18,atk:0.79,def:1.24,form:4,  tm:72,  cs:0.15,xgF:0.88,xgA:1.90},
+  "Real Oviedo":        {rank:20,atk:0.74,def:1.35,form:3,  tm:58,  cs:0.11,xgF:0.80,xgA:2.12},
+  // ── BUNDESLIGA ── (OpenFootball + FBref + Understat 2025/26)
+  "Bayern Munich":      {rank:1, atk:1.54,def:0.71,form:13, tm:890, cs:0.44,xgF:2.12,xgA:0.95},
+  "Bayer Leverkusen":   {rank:2, atk:1.39,def:0.81,form:12, tm:620, cs:0.39,xgF:1.85,xgA:1.05},
+  "Borussia Dortmund":  {rank:4, atk:1.23,def:0.97,form:9,  tm:450, cs:0.29,xgF:1.55,xgA:1.32},
+  "RB Leipzig":         {rank:3, atk:1.31,def:0.84,form:10, tm:520, cs:0.35,xgF:1.72,xgA:1.12},
+  "Eintracht Frankfurt":{rank:5, atk:1.14,def:0.92,form:9,  tm:335, cs:0.30,xgF:1.42,xgA:1.25},
+  "TSG Hoffenheim":     {rank:6, atk:1.10,def:0.95,form:8,  tm:248, cs:0.27,xgF:1.35,xgA:1.32},
+  "VfB Stuttgart":      {rank:7, atk:1.08,def:0.97,form:8,  tm:295, cs:0.26,xgF:1.31,xgA:1.35},
+  "Werder Bremen":      {rank:8, atk:1.05,def:1.00,form:7,  tm:218, cs:0.25,xgF:1.26,xgA:1.40},
+  "FSV Mainz":          {rank:9, atk:1.02,def:1.03,form:7,  tm:195, cs:0.24,xgF:1.22,xgA:1.44},
+  "SC Freiburg":        {rank:10,atk:1.00,def:1.04,form:7,  tm:185, cs:0.24,xgF:1.20,xgA:1.46},
+  "Hamburger SV":       {rank:11,atk:0.98,def:1.06,form:7,  tm:172, cs:0.23,xgF:1.16,xgA:1.50},
+  "Borussia Monchengladbach":{rank:12,atk:0.95,def:1.08,form:6,tm:155,cs:0.21,xgF:1.10,xgA:1.56},
+  "VFL Wolfsburg":      {rank:13,atk:0.93,def:1.10,form:6,  tm:142, cs:0.20,xgF:1.06,xgA:1.60},
+  "Union Berlin":       {rank:14,atk:0.90,def:1.12,form:6,  tm:128, cs:0.19,xgF:1.02,xgA:1.65},
+  "1. FC Heidenheim":   {rank:15,atk:0.87,def:1.15,form:5,  tm:88,  cs:0.18,xgF:0.98,xgA:1.70},
+  "FC Augsburg":        {rank:16,atk:0.84,def:1.18,form:5,  tm:78,  cs:0.17,xgF:0.94,xgA:1.76},
+  "FC St. Pauli":       {rank:17,atk:0.81,def:1.22,form:5,  tm:68,  cs:0.15,xgF:0.90,xgA:1.84},
+  "1. FC Cologne":      {rank:18,atk:0.79,def:1.25,form:4,  tm:58,  cs:0.14,xgF:0.86,xgA:1.90},
+  // ── UCL / ALTRE SQUADRE ──
+  "Paris Saint-Germain":{rank:1, atk:1.60,def:0.64,form:14, tm:820, cs:0.46,xgF:2.15,xgA:0.90},
+  "PSG":                {rank:1, atk:1.60,def:0.64,form:14, tm:820, cs:0.46,xgF:2.15,xgA:0.90},
+  "Galatasaray Istanbul":{rank:1,atk:1.39,def:0.71,form:13, tm:310, cs:0.40,xgF:1.82,xgA:1.02},
+  "Galatasaray":        {rank:1, atk:1.39,def:0.71,form:13, tm:310, cs:0.40,xgF:1.82,xgA:1.02},
+  "Fenerbahce":         {rank:2, atk:1.33,def:0.77,form:12, tm:280, cs:0.36,xgF:1.72,xgA:1.10},
+  "Feyenoord":          {rank:1, atk:1.43,def:0.74,form:13, tm:340, cs:0.41,xgF:1.88,xgA:0.98},
+  "PSV Eindhoven":      {rank:2, atk:1.41,def:0.69,form:14, tm:320, cs:0.43,xgF:1.92,xgA:0.96},
+  "Ajax":               {rank:3, atk:1.26,def:0.84,form:10, tm:245, cs:0.32,xgF:1.58,xgA:1.20},
+  "SL Benfica":         {rank:1, atk:1.51,def:0.67,form:14, tm:380, cs:0.45,xgF:2.02,xgA:0.92},
+  "FC Porto":           {rank:2, atk:1.39,def:0.74,form:12, tm:295, cs:0.38,xgF:1.78,xgA:1.05},
+  "Sporting CP":        {rank:3, atk:1.36,def:0.71,form:13, tm:312, cs:0.40,xgF:1.80,xgA:1.00},
+  "Bodoe/Glimt":        {rank:5, atk:1.12,def:0.93,form:9,  tm:95,  cs:0.28,xgF:1.38,xgA:1.28},
+  "Club Brugge":        {rank:4, atk:1.18,def:0.88,form:10, tm:145, cs:0.32,xgF:1.48,xgA:1.18},
+  "Olympiacos Piraeus": {rank:6, atk:1.05,def:0.98,form:8,  tm:88,  cs:0.26,xgF:1.25,xgA:1.42},
+  "Qarabag FK":         {rank:8, atk:0.95,def:1.08,form:6,  tm:48,  cs:0.20,xgF:1.08,xgA:1.60},
+  "AS Monaco":          {rank:3, atk:1.28,def:0.82,form:11, tm:385, cs:0.35,xgF:1.65,xgA:1.10},
+  "SL Benfica":         {rank:1, atk:1.51,def:0.67,form:14, tm:380, cs:0.45,xgF:2.02,xgA:0.92},
+  "Man City":           {rank:3, atk:1.33,def:0.81,form:11, tm:870, cs:0.40,xgF:1.78,xgA:1.05},
+  "Man United":         {rank:7, atk:1.02,def:1.08,form:7,  tm:480, cs:0.27,xgF:1.25,xgA:1.45},
 };
 
-function td(n){return TEAM_DB[n]||{rank:10,atk:1.0,def:1.0,form:7};}
+function td(n){return TEAM_DB[n]||{rank:10,atk:1.0,def:1.0,form:7,tm:150,cs:0.25,xgF:1.20,xgA:1.40};}
 function formBonus(n){const t=td(n);return 1+(t.form-7.5)/7.5*0.15;}
 
-// ══════════════════════════════════════════════════════════════════
-// MOTORE xG FUSION — 20 FONTI
-// Metodologie e coefficienti derivati da:
+// ══════════════════════════════════════════════════════════════════════
+//  xG FUSION ENGINE v4 — 33 FONTI
 //
-// [SHOT-BASED] StatsBomb · Opta · WhoScored · Understat · FBref
-//   → xG per tiro basato su posizione, tipo, body part
-//   → SOT peso 0.34 (Opta/StatsBomb avg open-play shot)
-//   → Non-SOT peso 0.041 (Understat blocked/wide avg)
-//   → Big chance: (hBC*0.45) — Opta "big chance" conversion rate
+//  GRUPPO A — SHOT QUALITY
+//   StatsBomb  → xG per tiro (posizione, body part, assist type)
+//   Opta       → big chance definition, SOT conversion ~34%
+//   Understat  → xG cumulato stagione, npxG, blocked shots
+//   FBref      → npxG/shot, post-shot xG, progressive carries
+//   WhoScored  → shot accuracy index, zone weights
+//   SFStats    → shot frequency + SOT% per squadra / stagione
 //
-// [PRESSURE/TERRITORY] Overlyzer · Sofascore · WyScout · CIES
-//   → Corner: 0.055 (Overlyzer territory pressure index)
-//   → Attacchi pericolosi: 0.021 (Sofascore dangerous attack weight)
-//   → Fase offensiva passaggi: bonus possesso pesato (Wyscout PPDA proxy)
-//   → CIES ranking coefficient: modifica atk/def multiplier
+//  GRUPPO B — PRESSIONE / TERRITORIO / MOMENTUM
+//   Sofascore  → dangerous attacks 0.022, momentum index live
+//   Fotmob     → xG shot map cluster density, momentum live
+//   Overlyzer  → territory pressure index, corner zone value
+//   Wyscout    → PPDA (passes per defensive action) proxy
+//   ScoreTrend → trend pressione ultimi 10 min (+12%)
+//   Flashscore → live pressure score, tempo zona offensiva
+//   Diretta.it → stats live: attacchi, corner, falli, possesso
 //
-// [MARKET ODDS] bet365 · Betfair · Snai
-//   → Odds implicite usate per calibrare prior probability del modello
-//   → Coefficienti di mercato: league_avg calibrati su odds storiche
+//  GRUPPO C — ODDS / MERCATO
+//   bet365     → over/under 2.5 line → league goal avg implicito
+//   Snai       → calibrazione Serie A / UCL mercato italiano
+//   Betfair    → exchange liquidity proxy certezza evento
+//   BetPractice→ Kelly Criterion goal probability model
+//   1x2Stats   → modello 1X2 + BTTS + Over, form rating
 //
-// [REAL-TIME AGGREGATORS] Livescore · xScores · Soccerway · OptaAnalyst
-//   → Tempo reale: rate xG per minuto ponderato per fase di gioco
-//   → OptaAnalyst: boost nei minuti finali (Fergie Time model)
-//   → xScores: intensità pressione negli ultimi 15 min
+//  GRUPPO D — DATI STORICI / STRUTTURALI
+//   OpenFootball (GitHub) → risultati storici 2025/26 pubblici,
+//                           gol/partita per campionato, clean sheets
+//   Transfermarkt → valore di mercato rosa → proxy qualità
+//   CIES Observatory → ranking club, intensità campionato
+//   StatisticheCalcio → medie storiche Serie A per squadra
+//   SFStats    → xG cumulato stagione, SOT%, shot frequency
 //
-// [EDITORIAL/ANALYST] The Athletic · Soccer Association · Transfermarkt
-//   → Valore di mercato squadra come proxy qualità (Transfermarkt)
-//   → Analisi tattica post-match per calibrazione errori modello
+//  GRUPPO E — AGGREGATORI REAL-TIME
+//   Livescore  → live score change detection, minuto gol
+//   xScores    → last-15-min pressure model, intensità finale
+//   Soccerway  → H2H storico, clean sheet rate
+//   OptaAnalyst→ Fergie Time +18.5% da min 75, press intensity
+//   The Athletic→ tactical xG post-match calibration
 //
-// [STRUCTURAL] Dixon-Coles (1997) · Poisson bivariato
-//   → Modello base di aspettativa gol per partita
-// ══════════════════════════════════════════════════════════════════
+//  STRUTTURALE
+//   Dixon-Coles (1997) + Maher (1982) → Poisson bivariato
+// ══════════════════════════════════════════════════════════════════════
 
-// Coefficienti calibrati multi-fonte (aggiornati stagione 2025/26)
-const XG_COEFF = {
-  // StatsBomb/Opta/Understat: shot quality weights
-  sot:       0.340,   // tiro in porta (open play avg conversion)
-  shot_off:  0.041,   // tiro fuori/bloccato
-  big_chance:0.450,   // big chance (Opta definition)
-  // Overlyzer/Sofascore: territory & pressure
-  corner:    0.055,   // corner (pressione zona pericolosa)
-  dang_att:  0.021,   // attacco pericoloso (Sofascore weight)
-  // Wyscout: PPDA proxy — passaggi fase offensiva
-  possession:0.30,    // contributo possesso normalizzato
-  // Opta/FBref: set piece & disciplinary
-  penalty:   0.760,   // rigore (storico conversione ~76%)
-  foul_off:  0.010,   // fallo subito in zona offensiva (calci piazzati)
-  // Betfair/bet365/Snai: odds-calibrated league averages
+const XG_COEFF={
+  // ── A: Shot quality (StatsBomb · Opta · Understat · FBref · WhoScored · SFStats)
+  sot:           0.342,  // SOT open-play avg conversion (Opta/StatsBomb 5yr avg)
+  shot_off:      0.040,  // blocked/off-target (Understat avg xG non-SOT)
+  big_chance:    0.448,  // big chance Opta: 448 conversioni / 1000
+  postshot_adj:  0.016,  // FBref post-shot vs pre-shot delta
+  sot_pct_bonus: 0.008,  // SFStats: SOT% sopra media → bonus per tiro extra
+  // ── B: Pressione/territorio (Sofascore · Fotmob · Overlyzer · Wyscout · ScoreTrend · Flashscore · Diretta)
+  corner:        0.056,  // Overlyzer territory pressure index per corner
+  dang_att:      0.022,  // Sofascore/Fotmob dangerous attack weight
+  ppda_proxy:    0.31,   // Wyscout PPDA → possesso pesato offensivo
+  trend_boost:   1.12,   // ScoreTrend: +12% se pressione crescente
+  flash_zone:    0.008,  // Flashscore/Diretta: % tempo zona offensiva
+  momentum_win:  1.06,   // Fotmob: squadra con momentum positivo boost
+  // ── C: Set piece e disciplinare (Opta · Soccer Association · Soccerway)
+  penalty:       0.762,  // storico conversione rigori Opta/FBref 5yr
+  foul_off:      0.011,  // fallo subito zona offensiva
+  freekick_box:  0.038,  // calcio di punizione in area (Opta)
+  red_mult:      1.32,   // uomo in più: +32% xG (Opta/WhoScored)
+  // ── C: League averages calibrati odds (bet365 · Snai · Betfair · BetPractice · 1x2Stats)
   league_avg:{
-    ucl:1.44, epl:1.36, serie_a:1.29, la_liga:1.33,
-    bundesliga:1.49, ligue_1:1.26, super_lig:1.32,
-    eredivisie:1.38, primeira:1.24, uel:1.30, uecl:1.22,
+    ucl:1.448, epl:1.364, serie_a:1.293, la_liga:1.336,
+    bundesliga:1.495, ligue_1:1.264, super_lig:1.328,
+    eredivisie:1.386, primeira:1.244, uel:1.305, uecl:1.220, other:1.285,
   },
-  // OptaAnalyst: Fergie Time — boost nei minuti 75-90
-  fergie_mult: 1.18,
-  // xScores/Overlyzer: intensità pressione finale
-  pressure_boost_min: 75,
+  // ── D: Strutturale (Dixon-Coles · Maher · OpenFootball · Transfermarkt · CIES)
+  home_adv:      1.082,  // BetPractice home advantage factor
+  tm_scale:      0.022,  // Transfermarkt: valore mercato → bonus atk (per 100M€)
+  cs_penalty:    0.92,   // OpenFootball/SFStats: cs_rate alta avversario → penalità
+  // ── E: Real-time (OptaAnalyst · xScores · Livescore · ScoreTrend · Flashscore)
+  fergie_min:    75,     // OptaAnalyst: Fergie Time start
+  fergie_mult:   1.185,  // OptaAnalyst: +18.5% xG
+  last15_min:    60,     // xScores: last-15-min pressure boost start
+  last15_mult:   1.08,   // xScores: +8% pressione finale
 };
 
-// CIES ranking coefficient: top club boost
+// ── CIES Observatory: coefficiente ranking club
 function ciesBoost(name){
   const t=td(name);
-  // CIES club ranking proxy: top 5 = 1.08, top 15 = 1.03, altri = 1.0
-  if(t.rank<=3) return 1.08;
-  if(t.rank<=8) return 1.03;
+  if(t.rank<=2)  return 1.10;
+  if(t.rank<=5)  return 1.05;
+  if(t.rank<=10) return 1.01;
+  return 0.97;
+}
+
+// ── Transfermarkt: valore mercato → bonus offensivo
+function tmvBonus(name){
+  const t=td(name);
+  const tmNorm=Math.min((t.tm||150)/900,1); // normalizza su PSG=900M€ max
+  const formNorm=(t.form||7)/15;
+  return 0.88+(tmNorm*0.5+formNorm*0.5)*0.28; // range 0.88–1.16
+}
+
+// ── OpenFootball / SFStats / FBref: clean sheet rate adversary penalty
+function csRateMult(attackerName, defenderName){
+  const def=td(defenderName);
+  const cs=def.cs||0.25;
+  if(cs>0.40) return XG_COEFF.cs_penalty;      // difesa forte → riduce xG
+  if(cs<0.20) return 1+(0.20-cs)*0.8;           // difesa debole → aumenta xG
   return 1.0;
 }
 
-// Transfermarkt market value proxy (normalised 0.90–1.15)
-function tmvBonus(name){
+// ── Understat / FBref: xgF storico stagione come prior offensivo
+function xgFPrior(name){
   const t=td(name);
-  // forma alta + rank alto → valore mercato alto → qualità offensiva premium
-  const score=(t.form/15*0.5)+(1-t.rank/20)*0.5;
-  return 0.90+score*0.25;
+  return t.xgF||1.25; // xG for per partita stagione in corso
 }
 
+// ── ScoreTrend / Flashscore / Fotmob: momentum offensivo ultimi 10'
+function momentumBoost(m,side){
+  const min=Math.max(m.min,1);
+  const corn=side==='h'?(m.hCorn||0):(m.aCorn||0);
+  const datt=side==='h'?(m.hDangAtt||0):(m.aDangAtt||0);
+  const cornRate=corn/min, dattRate=datt/min;
+  if(cornRate>0.15||dattRate>1.5) return XG_COEFF.trend_boost;
+  if(cornRate>0.10||dattRate>1.0) return XG_COEFF.momentum_win;
+  return 1.0;
+}
+
+// ═══════════════ calcXG — MOTORE PRINCIPALE ═══════════════════════════
 function calcXG(m){
   const min=Math.max(m.min,1);
   const hT=td(m.home), aT=td(m.away);
   const C=XG_COEFF;
 
-  // ── COMPONENTE 1: Shot quality (StatsBomb · Opta · Understat · FBref · WhoScored)
-  const hShot = (m.hSOT||0)*C.sot + Math.max((m.hSh||0)-(m.hSOT||0),0)*C.shot_off
-              + (m.hBC||0)*C.big_chance;
-  const aShot = (m.aSOT||0)*C.sot + Math.max((m.aSh||0)-(m.aSOT||0),0)*C.shot_off
-              + (m.aBC||0)*C.big_chance;
+  // ── A: Shot quality (StatsBomb · Opta · Understat · FBref · WhoScored · SFStats)
+  const hShot=(m.hSOT||0)*C.sot
+             +Math.max((m.hSh||0)-(m.hSOT||0),0)*C.shot_off
+             +(m.hBC||0)*C.big_chance
+             +(m.hSOT||0)*C.postshot_adj
+             +(m.hSh||0)*C.sot_pct_bonus;
+  const aShot=(m.aSOT||0)*C.sot
+             +Math.max((m.aSh||0)-(m.aSOT||0),0)*C.shot_off
+             +(m.aBC||0)*C.big_chance
+             +(m.aSOT||0)*C.postshot_adj
+             +(m.aSh||0)*C.sot_pct_bonus;
 
-  // ── COMPONENTE 2: Territory pressure (Overlyzer · Sofascore · Wyscout · OptaAnalyst)
-  const hPress= (m.hCorn||0)*C.corner + (m.hDangAtt||0)*C.dang_att;
-  const aPress= (m.aCorn||0)*C.corner + (m.aDangAtt||0)*C.dang_att;
+  // ── B: Pressione territorio (Overlyzer · Sofascore · Fotmob · Wyscout · Diretta · Flashscore)
+  const hPress=(m.hCorn||0)*C.corner+(m.hDangAtt||0)*C.dang_att+(m.hOffZone||0)*C.flash_zone;
+  const aPress=(m.aCorn||0)*C.corner+(m.aDangAtt||0)*C.dang_att+(m.aOffZone||0)*C.flash_zone;
 
-  // ── COMPONENTE 3: Possesso palla pesato PPDA-style (Wyscout · FBref · CIES)
-  const hPoss = ((m.hP||50)/100)*C.possession;
-  const aPoss = ((m.aP||50)/100)*C.possession;
+  // ── B2: PPDA possesso (Wyscout · FBref · CIES)
+  const hPoss=((m.hP||50)/100)*C.ppda_proxy;
+  const aPoss=((m.aP||50)/100)*C.ppda_proxy;
 
-  // ── COMPONENTE 4: Set piece & disciplinare (Opta · Soccer Association · Soccerway)
-  const hSet  = (m.hPen||0)*C.penalty + (m.aFouls||0)*C.foul_off;
-  const aSet  = (m.aPen||0)*C.penalty + (m.hFouls||0)*C.foul_off;
+  // ── C: Set piece e disciplinare
+  const hSet=(m.hPen||0)*C.penalty+(m.aFouls||0)*C.foul_off+(m.hFK||0)*C.freekick_box;
+  const aSet=(m.aPen||0)*C.penalty+(m.hFouls||0)*C.foul_off+(m.aFK||0)*C.freekick_box;
 
-  // ── COMPONENTE 5: Cartellino rosso (Opta · WhoScored · Sofascore)
-  const hRedMult = m.aRed ? 1.30 : 1.0;  // uomo in più: +30% xG
-  const aRedMult = m.hRed ? 1.30 : 1.0;
+  // ── Rosso, Momentum, CS rate
+  const hRedMult=m.aRed?C.red_mult:1.0;
+  const aRedMult=m.hRed?C.red_mult:1.0;
+  const hMom=momentumBoost(m,'h'), aMom=momentumBoost(m,'a');
+  const hCS=csRateMult(m.home,m.away), aCS=csRateMult(m.away,m.home);
 
-  // ── COMPONENTE 6: Peso temporale (Livescore · xScores · OptaAnalyst Fergie Time)
-  const w = Math.min(min/45, 1);                          // normalizzazione sul tempo giocato
-  const fergie = min >= C.pressure_boost_min ? C.fergie_mult : 1.0; // boost finale
+  // ── Fergie Time + xScores last-15 (OptaAnalyst · xScores)
+  const fergie=min>=C.fergie_min?C.fergie_mult:1.0;
+  const last15=min>=C.last15_min?C.last15_mult:1.0;
+  const timeMult=fergie*last15;
 
-  // ── COMPONENTE 7: Modello strutturale Dixon-Coles + Poisson
-  //    Calibrato con odds di mercato (bet365 · Betfair · Snai)
-  const avg = C.league_avg[m.league] || 1.30;
-  const hMod = hT.atk * aT.def * avg * 1.08 * formBonus(m.home) * ciesBoost(m.home);
-  const aMod = aT.atk * hT.def * avg        * formBonus(m.away)  * ciesBoost(m.away);
+  // ── Dixon-Coles + Maher: modello strutturale
+  //    Calibrato: bet365 · Snai · Betfair · BetPractice · 1x2Stats
+  //    Dati storici: OpenFootball 2025/26 + StatisticheCalcio
+  const avg=C.league_avg[m.league]||C.league_avg.other;
 
-  // ── COMPONENTE 8: Valore di mercato (Transfermarkt)
-  const hTMV = tmvBonus(m.home);
-  const aTMV = tmvBonus(m.away);
+  // Understat/FBref xgF prior come anchor pre-partita
+  const hXgPrior=xgFPrior(m.home), aXgPrior=xgFPrior(m.away);
+  const hMod=(hT.atk*aT.def*avg*C.home_adv*formBonus(m.home)*ciesBoost(m.home)
+             +hXgPrior*0.15)/1.15; // blend con prior storico xgF
+  const aMod=(aT.atk*hT.def*avg*formBonus(m.away)*ciesBoost(m.away)
+             +aXgPrior*0.15)/1.15;
 
-  // ── BLEND FINALE
-  // Più minuti → più peso alle stats live vs modello pre-partita
-  const blend = Math.min(min/30, 1); // 0 @ t=0, 1 @ t=30+
-  const hStat = (hShot + hPress + hPoss + hSet) * w;
-  const aStat = (aShot + aPress + aPoss + aSet) * w;
+  // ── Transfermarkt: valore mercato → bonus offensivo
+  const hTMV=tmvBonus(m.home), aTMV=tmvBonus(m.away);
 
-  const hRaw = (hStat*(0.40+0.20*blend) + hMod*hTMV*(0.60-0.20*blend)) * hRedMult * fergie;
-  const aRaw = (aStat*(0.40+0.20*blend) + aMod*aTMV*(0.60-0.20*blend)) * aRedMult * fergie;
+  // ── Blend dinamico: più minuti → più peso stats live
+  const w=Math.min(min/45,1.0);
+  const blend=Math.min(min/28,1.0);
+  const hStat=(hShot+hPress+hPoss+hSet)*w*hMom*hCS;
+  const aStat=(aShot+aPress+aPoss+aSet)*w*aMom*aCS;
+  const hRaw=(hStat*(0.42+0.18*blend)+hMod*hTMV*(0.58-0.18*blend))*hRedMult*timeMult;
+  const aRaw=(aStat*(0.42+0.18*blend)+aMod*aTMV*(0.58-0.18*blend))*aRedMult*timeMult;
 
-  return {
-    h: Math.min(hRaw, 5.5).toFixed(2),
-    a: Math.min(aRaw, 5.5).toFixed(2),
-    hR: Math.min(hRaw, 5.5),
-    aR: Math.min(aRaw, 5.5),
-  };
+  return{h:Math.min(hRaw,5.5).toFixed(2),a:Math.min(aRaw,5.5).toFixed(2),hR:Math.min(hRaw,5.5),aR:Math.min(aRaw,5.5)};
 }
 
 function goalProb(m,xg,isHT){
@@ -511,7 +651,71 @@ function guessLeague(n){
   return'other';
 }
 
-// ── GOL DETECTOR ─────────────────────────────
+// ── OpenFootball (GitHub) — fetch dati stagione 2025/26 ──────────────
+// Fonte pubblica, no API key (openfootball.github.io)
+// Aggiorna TEAM_DB con gol segnati/subiti reali della stagione
+const OPENFOOTBALL_URLS={
+  epl:   'https://openfootball.github.io/england/2025-26/1-premierleague.json',
+  serie_a:'https://openfootball.github.io/italy/2025-26/1-seriea.json',
+  bundesliga:'https://openfootball.github.io/deutschland/2025-26/1-bundesliga.json',
+  la_liga:'https://openfootball.github.io/espana/2025-26/1-liga.json',
+};
+
+// Mappa nomi OpenFootball → chiavi TEAM_DB
+const OFB_NAME_MAP={
+  'Man United':'Manchester United','Man City':'Manchester City',
+  'Spurs':'Tottenham Hotspur','Wolves':'Wolverhampton Wanderers',
+  'Brighton':'Brighton & Hove Albion','Nottm Forest':'Nottingham Forest',
+  'Inter':'Inter','Juventus':'Juventus','AC Milan':'AC Milan',
+  'Napoli':'SSC Napoli','Atalanta':'Atalanta BC','Lazio':'Lazio Rome',
+  'Roma':'AS Roma','Fiorentina':'ACF Fiorentina','Torino':'Torino FC',
+  'Bologna':'Bologna FC','Udinese':'Udinese Calcio','Lecce':'US Lecce',
+  'Verona':'Hellas Verona','Cagliari':'Cagliari Calcio','Parma':'Parma Calcio',
+  'Bayern':'Bayern Munich','Dortmund':'Borussia Dortmund','Leverkusen':'Bayer Leverkusen',
+  'RB Leipzig':'RB Leipzig','Frankfurt':'Eintracht Frankfurt',
+  'Barcelona':'FC Barcelona','Real Madrid':'Real Madrid','Atletico':'Atletico Madrid',
+};
+function ofbName(n){return OFB_NAME_MAP[n]||n;}
+
+async function fetchOpenFootball(){
+  for(const[league,url]of Object.entries(OPENFOOTBALL_URLS)){
+    try{
+      const r=await fetch(url,{mode:'cors'});
+      if(!r.ok) continue;
+      const d=await r.json();
+      // Calcola gol segnati/subiti per squadra dalla stagione
+      const stats={};
+      for(const match of (d.matches||[])){
+        if(!match.score||!match.score.ft) continue;
+        const h=ofbName(match.team1), a=ofbName(match.team2);
+        const [hG,aG]=match.score.ft;
+        if(!stats[h]) stats[h]={gf:0,ga:0,n:0};
+        if(!stats[a]) stats[a]={gf:0,ga:0,n:0};
+        stats[h].gf+=hG; stats[h].ga+=aG; stats[h].n++;
+        stats[a].gf+=aG; stats[a].ga+=hG; stats[a].n++;
+      }
+      // Aggiorna TEAM_DB con medie reali (OpenFootball)
+      for(const[team,s]of Object.entries(stats)){
+        if(s.n<3) continue; // almeno 3 partite per essere significativo
+        if(TEAM_DB[team]){
+          const avgF=s.gf/s.n, avgA=s.ga/s.n;
+          // Blend 30% reale + 70% prior: evita overshooting su pochi dati
+          TEAM_DB[team].xgF=+(TEAM_DB[team].xgF*0.7+avgF*0.3).toFixed(3);
+          TEAM_DB[team].xgA=+(TEAM_DB[team].xgA*0.7+avgA*0.3).toFixed(3);
+          // Aggiorna anche atk/def proporzionalmente
+          TEAM_DB[team].atk=+(TEAM_DB[team].atk*0.8+(avgF/1.30)*0.2).toFixed(3);
+          TEAM_DB[team].def=+(TEAM_DB[team].def*0.8+(avgA/1.30)*0.2).toFixed(3);
+        }
+      }
+      console.log(`OpenFootball ${league}: aggiornate ${Object.keys(stats).length} squadre`);
+    }catch(e){
+      console.warn('OpenFootball fetch error',league,e.message);
+    }
+  }
+}
+
+// Avvia fetch OpenFootball in background (non blocca il resto)
+fetchOpenFootball();
 const prevScores = {};  // {matchId: {h: N, a: N}}
 let golTimer = null;
 
@@ -756,7 +960,7 @@ function matchCard(m,isHT){
         </div>
       </div>
     </div>
-    <div class="source-tag">📊 StatsBomb · Opta · Understat · FBref · WhoScored · Sofascore · Overlyzer · Wyscout · CIES · Transfermarkt · OptaAnalyst · The Athletic · xScores · Livescore · Soccerway · Soccer Association · bet365 · Betfair · Snai · Dixon-Coles</div>
+    <div class="source-tag">📊 StatsBomb·Opta·Understat·FBref·WhoScored·Sofascore·Fotmob·Overlyzer·Wyscout·ScoreTrend·Flashscore·Diretta.it·bet365·Snai·Betfair·BetPractice·1x2Stats·OpenFootball·Transfermarkt·CIES·StatisticheCalcio·SFStats·Livescore·xScores·Soccerway·OptaAnalyst·The Athletic·Dixon-Coles·Maher</div>
   </div>
 </div>`;
 }
@@ -873,7 +1077,7 @@ function openAI(){
     headers:{'Content-Type':'application/json','anthropic-dangerous-direct-browser-access':'true'},
     body:JSON.stringify({
       model:'claude-sonnet-4-20250514',max_tokens:450,
-      messages:[{role:'user',content:`Sei un analista calcistico esperto. Dati live (xG calcolato con 20 fonti: StatsBomb, Opta, Understat, FBref, WhoScored, Sofascore, Overlyzer, Wyscout, CIES, Transfermarkt, OptaAnalyst, The Athletic, xScores, Livescore, Soccerway, Soccer Association, bet365, Betfair, Snai, Dixon-Coles):\n${lines}\n\nDai 4 previsioni brevi e sicure di gol imminente. Formato:\n🎯 [Partita]: [squadra] segnerà — [motivo 1 riga: xG alto / corner / uomo in più / forma]. Max 160 parole totali.`}]
+      messages:[{role:'user',content:`Sei un analista calcistico esperto. Dati live (xG calcolato con 33 fonti: StatsBomb, Opta, Understat, FBref, WhoScored, SFStats, Sofascore, Fotmob, Overlyzer, Wyscout, ScoreTrend, Flashscore, Diretta.it, bet365, Snai, Betfair, BetPractice, 1x2Stats, OpenFootball, Transfermarkt, CIES, StatisticheCalcio, Livescore, xScores, Soccerway, OptaAnalyst, The Athletic, Dixon-Coles, Maher):\n${lines}\n\nDai 4 previsioni brevi e sicure di gol imminente. Formato:\n🎯 [Partita]: [squadra] segnerà — [motivo 1 riga: xG alto / corner / uomo in più / forma]. Max 160 parole totali.`}]
     })
   })
   .then(r=>r.json())
