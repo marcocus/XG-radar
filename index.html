@@ -1094,61 +1094,60 @@ function predictMatch(fix){
 }
 
 const UPCOMING=[
-  // -- ? CHAMPIONS LEAGUE --
-  {id:"ucl_gal_lfc",home:"Galatasaray Istanbul",away:"Liverpool FC",     kickoff:"2026-03-10T17:45:00Z",league:"ucl"},
-  {id:"ucl_new_bar",home:"Newcastle United",    away:"FC Barcelona",     kickoff:"2026-03-10T20:00:00Z",league:"ucl"},
-  {id:"ucl_atm_tot",home:"Atletico Madrid",     away:"Tottenham Hotspur",kickoff:"2026-03-10T20:00:00Z",league:"ucl"},
-  {id:"ucl_ata_bmu",home:"Atalanta BC",         away:"Bayern Munich",    kickoff:"2026-03-10T20:00:00Z",league:"ucl"},
-  {id:"ucl_lev_ars",home:"Bayer Leverkusen",    away:"Arsenal FC",       kickoff:"2026-03-11T17:45:00Z",league:"ucl"},
-  {id:"ucl_rma_mci",home:"Real Madrid",         away:"Manchester City",  kickoff:"2026-03-11T20:00:00Z",league:"ucl"},
-  {id:"ucl_psg_cfc",home:"Paris Saint-Germain", away:"Chelsea FC",       kickoff:"2026-03-11T20:00:00Z",league:"ucl"},
-  // -- ? EUROPA LEAGUE --
-  {id:"uel_tot_bra",home:"Tottenham Hotspur",   away:"Bayer Leverkusen", kickoff:"2026-03-12T20:00:00Z",league:"uel"},
-  {id:"uel_man_por",home:"Manchester United",   away:"FC Porto",         kickoff:"2026-03-12T20:00:00Z",league:"uel"},
-  {id:"uel_laz_aja",home:"Lazio Rome",          away:"Ajax",             kickoff:"2026-03-12T17:45:00Z",league:"uel"},
-  {id:"uel_rom_fen",home:"AS Roma",             away:"Fenerbahce",       kickoff:"2026-03-13T17:45:00Z",league:"uel"},
-  // -- ? CONFERENCE LEAGUE --
-  {id:"uecl_fio_bet",home:"ACF Fiorentina",     away:"Real Betis Seville",kickoff:"2026-03-12T18:45:00Z",league:"uecl"},
-  {id:"uecl_che_gir",home:"Chelsea FC",         away:"Girona FC",        kickoff:"2026-03-12T21:00:00Z",league:"uecl"},
-  // -- ?? SERIE A --
-  {id:"sa_tor_par",home:"Torino FC",            away:"Parma Calcio",     kickoff:"2026-03-13T19:45:00Z",league:"serie_a"},
-  {id:"sa_int_ata",home:"Inter",                away:"Atalanta BC",      kickoff:"2026-03-14T14:00:00Z",league:"serie_a"},
-  {id:"sa_nap_lec",home:"SSC Napoli",           away:"US Lecce",         kickoff:"2026-03-14T17:00:00Z",league:"serie_a"},
-  {id:"sa_udi_juv",home:"Udinese Calcio",       away:"Juventus",         kickoff:"2026-03-14T19:45:00Z",league:"serie_a"},
-  {id:"sa_ver_gen",home:"Hellas Verona",        away:"Genoa CFC",        kickoff:"2026-03-15T11:30:00Z",league:"serie_a"},
-  {id:"sa_sas_bol",home:"Sassuolo Calcio",      away:"Bologna FC",       kickoff:"2026-03-15T14:00:00Z",league:"serie_a"},
-  {id:"sa_com_rom",home:"Como 1907",            away:"AS Roma",          kickoff:"2026-03-15T17:00:00Z",league:"serie_a"},
-  {id:"sa_laz_mil",home:"Lazio Rome",           away:"AC Milan",         kickoff:"2026-03-15T19:45:00Z",league:"serie_a"},
-  {id:"sa_cre_fio",home:"US Cremonese",         away:"ACF Fiorentina",   kickoff:"2026-03-16T19:45:00Z",league:"serie_a"},
-  // -- ENG PREMIER LEAGUE --
-  {id:"pl_bur_bou",home:"Burnley FC",           away:"AFC Bournemouth",  kickoff:"2026-03-14T15:00:00Z",league:"epl"},
-  {id:"pl_sun_bri",home:"Sunderland AFC",       away:"Brighton & Hove Albion",kickoff:"2026-03-14T15:00:00Z",league:"epl"},
-  {id:"pl_ars_eve",home:"Arsenal FC",           away:"Everton FC",       kickoff:"2026-03-14T17:30:00Z",league:"epl"},
-  {id:"pl_cfc_new",home:"Chelsea FC",           away:"Newcastle United", kickoff:"2026-03-14T17:30:00Z",league:"epl"},
-  {id:"pl_whu_mci",home:"West Ham United",      away:"Manchester City",  kickoff:"2026-03-14T20:00:00Z",league:"epl"},
-  {id:"pl_lfc_tot",home:"Liverpool FC",         away:"Tottenham Hotspur",kickoff:"2026-03-15T16:30:00Z",league:"epl"},
-  {id:"pl_mun_avl",home:"Manchester United",    away:"Aston Villa",      kickoff:"2026-03-15T14:00:00Z",league:"epl"},
-  // -- ?? BUNDESLIGA --
-  {id:"bl_lev_bmu",home:"Bayer Leverkusen",     away:"Bayern Munich",    kickoff:"2026-03-14T14:30:00Z",league:"bundesliga"},
-  {id:"bl_bvb_fca",home:"Borussia Dortmund",    away:"FC Augsburg",      kickoff:"2026-03-14T14:30:00Z",league:"bundesliga"},
-  {id:"bl_svw_m05",home:"Werder Bremen",        away:"FSV Mainz",        kickoff:"2026-03-15T14:30:00Z",league:"bundesliga"},
-  // -- ?? LA LIGA --
-  {id:"ll_atm_get",home:"Atletico Madrid",      away:"Getafe CF",        kickoff:"2026-03-14T15:15:00Z",league:"la_liga"},
-  {id:"ll_rma_elc",home:"Real Madrid",          away:"Elche CF",         kickoff:"2026-03-14T20:00:00Z",league:"la_liga"},
-  {id:"ll_bar_sev",home:"FC Barcelona",         away:"Sevilla FC",       kickoff:"2026-03-15T15:15:00Z",league:"la_liga"},
-  // -- ?? EREDIVISIE --
-  {id:"ere_psv_aja",home:"PSV Eindhoven",       away:"Ajax",             kickoff:"2026-03-15T17:45:00Z",league:"eredivisie"},
-  {id:"ere_fey_utb",home:"Feyenoord",           away:"Utrecht",          kickoff:"2026-03-14T19:00:00Z",league:"eredivisie"},
-  {id:"ere_alf_gro",home:"AZ Alkmaar",          away:"Groningen",        kickoff:"2026-03-14T16:30:00Z",league:"eredivisie"},
-  // -- ?? PRIMEIRA LIGA --
-  {id:"pl_por_ben",home:"FC Porto",             away:"SL Benfica",       kickoff:"2026-03-15T20:30:00Z",league:"primeira"},
-  {id:"pl_spo_bra",home:"Sporting CP",          away:"SC Braga",         kickoff:"2026-03-14T20:15:00Z",league:"primeira"},
-  {id:"pl_vit_gui",home:"Vitoria Guimaraes",    away:"Gil Vicente",      kickoff:"2026-03-14T17:30:00Z",league:"primeira"},
-  // -- ?? S?PER LIG --
-  {id:"sl_gal_fen",home:"Galatasaray Istanbul", away:"Fenerbahce",       kickoff:"2026-03-16T18:00:00Z",league:"super_lig"},
-  {id:"sl_bes_tra",home:"Besiktas",             away:"Trabzonspor",      kickoff:"2026-03-14T17:00:00Z",league:"super_lig"},
-  {id:"sl_ant_kas",home:"Antalyaspor",          away:"Kasimpasa",        kickoff:"2026-03-15T14:00:00Z",league:"super_lig"},
-];
+  // UCL OTTAVI RITORNO - 17/18 marzo 2026
+  {id:"ucl_lev_ars2",home:"Arsenal FC",          away:"Bayer Leverkusen", kickoff:"2026-03-17T20:00:00Z",league:"ucl"},
+  {id:"ucl_spo_bdo2",home:"Sporting CP",         away:"Bodo Glimt",       kickoff:"2026-03-17T17:45:00Z",league:"ucl"},
+  {id:"ucl_cfc_psg2",home:"Chelsea FC",          away:"Paris Saint-Germain",kickoff:"2026-03-17T20:00:00Z",league:"ucl"},
+  {id:"ucl_mci_rma2",home:"Manchester City",     away:"Real Madrid",      kickoff:"2026-03-18T20:00:00Z",league:"ucl"},
+  {id:"ucl_bar_new2",home:"FC Barcelona",        away:"Newcastle United", kickoff:"2026-03-18T17:45:00Z",league:"ucl"},
+  {id:"ucl_bmu_ata2",home:"Bayern Munich",       away:"Atalanta BC",      kickoff:"2026-03-18T20:00:00Z",league:"ucl"},
+  {id:"ucl_lfc_gal2",home:"Liverpool FC",        away:"Galatasaray",      kickoff:"2026-03-18T20:00:00Z",league:"ucl"},
+  {id:"ucl_tot_atm2",home:"Tottenham Hotspur",   away:"Atletico Madrid",  kickoff:"2026-03-18T20:00:00Z",league:"ucl"},
+  // UEL OTTAVI ANDATA - 12 marzo 2026
+  {id:"uel_ath_oma",home:"Athletic Club",        away:"Olympique Marseille",kickoff:"2026-03-12T20:00:00Z",league:"uel"},
+  {id:"uel_fra_bru",home:"Frankfurt",            away:"Club Brugge",       kickoff:"2026-03-12T17:45:00Z",league:"uel"},
+  {id:"uel_tot_fen",home:"Tottenham Hotspur",    away:"Fenerbahce",        kickoff:"2026-03-12T20:00:00Z",league:"uel"},
+  {id:"uel_rom_ajx",home:"AS Roma",              away:"Ajax",              kickoff:"2026-03-12T17:45:00Z",league:"uel"},
+  // UEL OTTAVI RITORNO - 19 marzo 2026
+  {id:"uel_oma_ath2",home:"Olympique Marseille", away:"Athletic Club",    kickoff:"2026-03-19T20:00:00Z",league:"uel"},
+  {id:"uel_bru_fra2",home:"Club Brugge",         away:"Frankfurt",        kickoff:"2026-03-19T20:00:00Z",league:"uel"},
+  // UECL OTTAVI ANDATA - 12 marzo 2026
+  {id:"uecl_mai_olo",home:"FSV Mainz",           away:"Sigma Olomouc",    kickoff:"2026-03-12T18:45:00Z",league:"uecl"},
+  {id:"uecl_fio_bru",home:"ACF Fiorentina",      away:"Club Brugge B",    kickoff:"2026-03-12T21:00:00Z",league:"uecl"},
+  {id:"uecl_cry_fk",home:"Crystal Palace",       away:"FK Bodo Glimt B",  kickoff:"2026-03-12T18:45:00Z",league:"uecl"},
+  // SERIE A 29a giornata - 13-16 marzo 2026
+  {id:"sa_tor_par",home:"Torino FC",             away:"Parma Calcio",     kickoff:"2026-03-13T19:45:00Z",league:"serie_a"},
+  {id:"sa_int_ata",home:"Inter",                 away:"Atalanta BC",      kickoff:"2026-03-14T20:45:00Z",league:"serie_a"},
+  {id:"sa_nap_lec",home:"SSC Napoli",            away:"US Lecce",         kickoff:"2026-03-14T15:00:00Z",league:"serie_a"},
+  {id:"sa_udi_juv",home:"Udinese Calcio",        away:"Juventus",         kickoff:"2026-03-14T20:45:00Z",league:"serie_a"},
+  {id:"sa_ver_gen",home:"Hellas Verona",         away:"Genoa CFC",        kickoff:"2026-03-15T12:30:00Z",league:"serie_a"},
+  {id:"sa_pis_cag",home:"Pisa SC",              away:"Cagliari Calcio",   kickoff:"2026-03-15T15:00:00Z",league:"serie_a"},
+  {id:"sa_com_rom",home:"Como 1907",             away:"AS Roma",          kickoff:"2026-03-15T18:00:00Z",league:"serie_a"},
+  {id:"sa_laz_mil",home:"SS Lazio",             away:"AC Milan",          kickoff:"2026-03-16T20:45:00Z",league:"serie_a"},
+  {id:"sa_cre_fio",home:"US Cremonese",          away:"ACF Fiorentina",   kickoff:"2026-03-15T20:45:00Z",league:"serie_a"},
+  {id:"sa_sas_bol",home:"Sassuolo Calcio",       away:"Bologna FC",       kickoff:"2026-03-15T15:00:00Z",league:"serie_a"},
+  // PREMIER LEAGUE - weekend 14-16 marzo 2026
+  {id:"pl_ars_eve",home:"Arsenal FC",            away:"Everton FC",        kickoff:"2026-03-14T15:00:00Z",league:"epl"},
+  {id:"pl_cfc_bou",home:"Chelsea FC",            away:"AFC Bournemouth",   kickoff:"2026-03-14T15:00:00Z",league:"epl"},
+  {id:"pl_mci_new",home:"Manchester City",       away:"Newcastle United",  kickoff:"2026-03-14T17:30:00Z",league:"epl"},
+  {id:"pl_lfc_avl",home:"Liverpool FC",          away:"Aston Villa",       kickoff:"2026-03-15T16:30:00Z",league:"epl"},
+  {id:"pl_tot_mun",home:"Tottenham Hotspur",     away:"Manchester United", kickoff:"2026-03-15T14:00:00Z",league:"epl"},
+  {id:"pl_whu_bri",home:"West Ham United",       away:"Brighton & Hove Albion",kickoff:"2026-03-15T14:00:00Z",league:"epl"},
+  // BUNDESLIGA - 28 giornata - 14-15 marzo 2026
+  {id:"bl_bmu_lev",home:"Bayern Munich",         away:"Bayer Leverkusen",  kickoff:"2026-03-14T15:30:00Z",league:"bundesliga"},
+  {id:"bl_bvb_m05",home:"Borussia Dortmund",     away:"FSV Mainz",         kickoff:"2026-03-14T15:30:00Z",league:"bundesliga"},
+  {id:"bl_svw_lei",home:"Werder Bremen",         away:"RB Leipzig",        kickoff:"2026-03-15T15:30:00Z",league:"bundesliga"},
+  {id:"bl_fra_vfb",home:"Frankfurt",             away:"VfB Stuttgart",     kickoff:"2026-03-15T17:30:00Z",league:"bundesliga"},
+  // LA LIGA - 28 giornata - 14-16 marzo 2026
+  {id:"ll_rma_val",home:"Real Madrid",           away:"Valencia CF",       kickoff:"2026-03-14T21:00:00Z",league:"la_liga"},
+  {id:"ll_bar_get",home:"FC Barcelona",          away:"Getafe CF",         kickoff:"2026-03-15T17:00:00Z",league:"la_liga"},
+  {id:"ll_atm_ath",home:"Atletico Madrid",       away:"Athletic Club",     kickoff:"2026-03-15T21:00:00Z",league:"la_liga"},
+  {id:"ll_vil_bet",home:"Villarreal CF",         away:"Real Betis",        kickoff:"2026-03-16T21:00:00Z",league:"la_liga"},
+  // LIGUE 1 - 27 giornata - 14-16 marzo 2026
+  {id:"fr_psg_nic",home:"Paris Saint-Germain",   away:"OGC Nice",          kickoff:"2026-03-15T20:45:00Z",league:"ligue_1"},
+  {id:"fr_oml_lil",home:"Olympique Marseille",   away:"LOSC Lille",        kickoff:"2026-03-15T17:00:00Z",league:"ligue_1"},
+  {id:"fr_mon_ren",home:"AS Monaco",             away:"Stade Rennais",     kickoff:"2026-03-14T20:00:00Z",league:"ligue_1"},
+]
 
 // SEED demo (non mostrati se nessuna live)
 const SEED_HT=[
@@ -2086,7 +2085,7 @@ function render(){
     el.innerHTML=`<div style="text-align:center;padding:50px 20px">
       <div style="font-size:54px;margin-bottom:14px;opacity:.25">📡</div>
       <div style="font-family:'Oswald',sans-serif;font-size:22px;font-weight:900;color:#334155;margin-bottom:8px">NESSUNA PARTITA IN CORSO</div>
-      <div style="font-size:12px;color:#475569;margin-bottom:22px">Aggiornamento automatico ogni 10 secondi</div>
+      <div style="font-size:12px;color:#475569;margin-bottom:22px">Aggiornamento automatico ogni 15 secondi</div>
       <button onclick="setTabId('future');render();" class="ai-btn" style="font-size:13px;padding:10px 22px">🔮 Vedi prossime partite</button>
     </div>`;
     return;
