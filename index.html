@@ -68,7 +68,7 @@ body.desktop-mode .scorer-name{font-size:16px!important}
 .card:hover{transform:translateY(-1px)}
 .card.prob-hot{border-left-color:#22c55e;animation:hotglow 0.85s ease-in-out infinite}
 .card.prob-warm{border-left-color:#f59e0b;box-shadow:0 4px 22px rgba(245,158,11,0.2)}
-.card.prob-mid{border-left-color:#64748b}
+.card.prob-mid{border-left-color:#38bdf8}
 .card.prob-low{border-left-color:#334155}
 @keyframes hotglow{
   0%  {box-shadow:0 4px 20px rgba(0,0,0,0.5), 0 0 0 0   rgba(34,197,94,0.0)}
@@ -211,6 +211,13 @@ body.desktop-mode .scorer-name{font-size:16px!important}
       <span id="statusText">Connessione live…</span>
     </div>
     <div class="filter-row" id="leagueFilters"></div>
+    <div style="display:flex;gap:10px;align-items:center;padding:4px 14px 6px;flex-wrap:wrap">
+      <span style="font-size:9px;color:#475569;font-weight:700;letter-spacing:1px">PROBABILITÀ GOL:</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#22c55e;display:inline-block"></span><span style="font-size:9px;color:#94a3b8">≥70% PERICOLO</span></span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#f59e0b;display:inline-block"></span><span style="font-size:9px;color:#94a3b8">50-69% ATTENZIONE</span></span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#38bdf8;display:inline-block"></span><span style="font-size:9px;color:#94a3b8">30-49% MEDIA</span></span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#334155;display:inline-block"></span><span style="font-size:9px;color:#94a3b8">&lt;30% BASSA</span></span>
+    </div>
     <div class="tabs">
       <button class="tab" onclick="setTab('ht',this)">⏱ PRIMO TEMPO</button>
       <button class="tab" onclick="setTab('ft',this)">⚽ SECONDO TEMPO</button>
@@ -991,6 +998,48 @@ const MIDFIELDER_DB = {
                           {name:"Branco van den Boomen",pos:"CM",goals:5,xg90:0.15, sp:8, long:7, form:4}],
 };
 
+// -- Calcola attaccante piu pericoloso da segnare
+function bestAttackerScorer(teamName, xgTeam){
+  const t = td(teamName);
+  const xgV = parseFloat(xgTeam)||1.2;
+  const xgBoost = Math.min(xgV/1.2, 2.0);
+  // Cerca in TEAM_DB i dati attaccante
+  const players = [
+    {name:'Attaccante '+teamName, pos:'CF', goals:Math.round(xgV*12), pct:0}
+  ];
+  // Usa i dati del team per stimare probabilità attaccante
+  const basePct = Math.round(Math.min((t.atk*0.45 + xgV*0.28)*100 * xgBoost, 65));
+  return {
+    name: getTopStriker(teamName),
+    pos: 'CF/ST',
+    goals: Math.round(xgV*10),
+    pct: Math.max(basePct, 12)
+  };
+}
+
+// Dizionario attaccanti principali
+function getTopStriker(name){
+  const strikers = {
+    'Inter': 'Lautaro Martinez', 'SSC Napoli': 'Romelu Lukaku',
+    'AC Milan': 'Olivier Giroud', 'Juventus': 'Dusan Vlahovic',
+    'Atalanta BC': "Mateo Retegui", 'AS Roma': 'Paulo Dybala',
+    'Lazio Rome': 'Ciro Immobile', 'ACF Fiorentina': 'Andrea Belotti',
+    'Bologna FC': 'Santiago Castro', 'Torino FC': "Duvan Zapata",
+    'Liverpool FC': 'Mohamed Salah', 'Arsenal FC': 'Kai Havertz',
+    'Manchester City': 'Erling Haaland', 'Chelsea FC': 'Nicolas Jackson',
+    'Manchester United': 'Rasmus Hojlund', 'Tottenham Hotspur': 'Son Heung-min',
+    'Real Madrid CF': 'Kylian Mbappe', 'FC Barcelona': 'Robert Lewandowski',
+    'Atletico Madrid': 'Antoine Griezmann', 'Sevilla FC': 'Youssef En-Nesyri',
+    'Bayern Munich': 'Harry Kane', 'Borussia Dortmund': 'Niclas Fullkrug',
+    'Bayer Leverkusen': 'Victor Boniface', 'RB Leipzig': 'Benjamin Sesko',
+    'Paris Saint-Germain': 'Kylian Mbappe', 'Olympique Marseille': 'Pierre-Emerick Aubameyang',
+    'Galatasaray Istanbul': 'Mauro Icardi', 'Fenerbahce': 'Edin Dzeko',
+    'SL Benfica': 'Vangelis Pavlidis', 'Sporting CP': 'Viktor Gyokeres',
+    'FC Porto': 'Mehdi Taremi',
+  };
+  return strikers[name] || 'Attaccante';
+}
+
 // -- Calcola difensore piu pericoloso da segnare per una squadra
 // Formula: score = (xg90*40) + (goals*8) + (sp*5) + (head*3) + (form*4) + altezza_bonus
 // Fonti: FBref xG/90, WhoScored set piece, Wikipedia altezza, Understat gol
@@ -1357,12 +1406,13 @@ function vibrateGol(){
   }catch(e){}
 }
 
-function showGol(teamName, hScore, aScore){
+function showGol(teamName, hScore, aScore, scorer){
   // Sound + vibration
   playGolSound();
   vibrateGol();
   // Rebuild overlay to reset CSS animations
   const o = document.getElementById('golOverlay');
+  const scorerHtml = scorer ? '<div class="gol-scorer-name">⚽ '+scorer+'</div>' : '';
   o.innerHTML='<div class="gol-bg" id="golBg"></div>'
     +'<div class="gol-ring"></div>'
     +'<div class="gol-ring gol-ring2"></div>'
@@ -1372,6 +1422,7 @@ function showGol(teamName, hScore, aScore){
     +'<div class="gol-text">GOL!</div>'
     +'<div class="gol-team">'+teamName.toUpperCase()+'</div>'
     +'<div class="gol-score">'+hScore+' - '+aScore+'</div>'
+    +scorerHtml
     +'</div>';
   spawnParticles();
   o.classList.remove('hide'); o.classList.add('show');
@@ -1382,15 +1433,20 @@ function showGol(teamName, hScore, aScore){
   golTimer = setTimeout(()=>{
     o.classList.add('hide');
     setTimeout(()=>o.classList.remove('show','hide'),800);
-  }, 10000);
+  }, 5000);
 }
 
 function checkGoals(matches){
   for(const m of matches){
     const prev = prevScores[m.id];
     if(prev){
-      if(m.hS > prev.h) showGol(m.home, m.hS, m.aS);
-      else if(m.aS > prev.a) showGol(m.away, m.hS, m.aS);
+      if(m.hS > prev.h){
+        const scorer = m.lastGoalScorer || m.hScorer || null;
+        showGol(m.home, m.hS, m.aS, scorer);
+      } else if(m.aS > prev.a){
+        const scorer = m.lastGoalScorer || m.aScorer || null;
+        showGol(m.away, m.hS, m.aS, scorer);
+      }
     }
     prevScores[m.id] = {h: m.hS, a: m.aS};
   }
@@ -1407,7 +1463,12 @@ async function fetchLive(){
     for(const f of (d.response||[])){
       const s=f.fixture?.status?.short;
       if(!['1H','2H','ET','HT','P'].includes(s))continue;
-      const min=parseInt(f.fixture?.status?.elapsed)||45;
+      // Minuto corretto: 1H=1-45, HT=45, 2H=46-90, ET=91+
+      let min=parseInt(f.fixture?.status?.elapsed)||0;
+      if(s==='HT') min=45;
+      else if(s==='2H' && min<46) min=46;
+      else if(s==='1H' && min<1) min=1;
+      if(min===0) min = s==='2H'?46:1;
       const lk=guessLeague(f.league?.name||'');
       if(!LEAGUES[lk])LEAGUES[lk]={name:f.league?.name||lk,flag:'🌍',color:'#94a3b8'};
       const stats=f.statistics||[];
@@ -1423,7 +1484,7 @@ async function fetchLive(){
       const m={
         id:'l'+f.fixture.id,
         home:f.teams?.home?.name||'Home',away:f.teams?.away?.name||'Away',
-        hS:f.goals?.home??0,aS:f.goals?.away??0,min,
+        hS:f.goals?.home??0,aS:f.goals?.away??0,min,status:s,
         hP:sv(hId,'Ball Possession')||50,aP:sv(aId,'Ball Possession')||50,
         hSh:sv(hId,'Total Shots'),aSh:sv(aId,'Total Shots'),
         hSOT:sv(hId,'Shots on Goal'),aSOT:sv(aId,'Shots on Goal'),
@@ -1435,7 +1496,8 @@ async function fetchLive(){
         hPen:sv(hId,'Penalty'),aPen:sv(aId,'Penalty'),
         league:lk,
       };
-      if(min<=44)ht.push(m);else ft.push(m);
+      // HT = intervallo, 1H = primo tempo, 2H/ET = secondo tempo
+      if(s==='1H'||s==='HT') ht.push(m); else ft.push(m);
     }
   }catch(e){
     document.getElementById('statusText').textContent='(!)️ '+e.message.slice(0,50);
@@ -1492,16 +1554,26 @@ function setTab(tab,btn){
 function setLeague(id){currentLeague=id;buildFilters();render();}
 
 function buildFilters(){
-  const used=new Set(['all']);
+  const FIXED=['all','serie_a','epl','la_liga','ligue_1','super_lig','primeira','ucl','uel','uecl'];
+  const used=new Set(FIXED);
   const src=hasLive?[...(liveHT||[]),...(liveFT||[])]:getUpcoming();
   src.forEach(m=>used.add(m.league));
   const c=document.getElementById('leagueFilters');
-  c.innerHTML='<button class="filter-btn '+(currentLeague==='all'?'active':'')+'" onclick="setLeague(\'all\')">🌍 Tutti</button>';
-  used.forEach(id=>{
-    if(id==='all')return;
-    const l=LEAGUES[id]||{flag:'🌍',name:id};
-    c.innerHTML+=`<button class="filter-btn ${currentLeague===id?'active':''}" onclick="setLeague('${id}')">${l.flag} ${l.name}</button>`;
+  let html='';
+  FIXED.forEach(id=>{
+    if(id==='all'){
+      html+=`<button class="filter-btn ${currentLeague==='all'?'active':''}" onclick="setLeague('all')">🌍 Tutti</button>`;
+    } else {
+      const l=LEAGUES[id]||{flag:'🌍',name:id};
+      html+=`<button class="filter-btn ${currentLeague===id?'active':''}" onclick="setLeague('${id}')">${l.flag} ${l.name}</button>`;
+    }
   });
+  used.forEach(id=>{
+    if(FIXED.includes(id)||id==='all')return;
+    const l=LEAGUES[id]||{flag:'🌍',name:id};
+    html+=`<button class="filter-btn ${currentLeague===id?'active':''}" onclick="setLeague('${id}')">${l.flag} ${l.name}</button>`;
+  });
+  c.innerHTML=html;
 }
 
 function matchCard(m,isHT){
@@ -1544,7 +1616,7 @@ function matchCard(m,isHT){
       </div>
       <div class="score-center">
         <div class="score">${m.hS}:${m.aS}</div>
-        <div class="min-badge"><span class="min-dot"></span>${m.min}'</div>
+        <div class="min-badge"><span class="min-dot"></span>${m.min===45&&m.status==='HT'?'HT':m.min+"'"}</div>
       </div>
       <div class="team-block" style="text-align:right;display:flex;align-items:center;gap:6px;justify-content:flex-end">
         <div>
@@ -1578,8 +1650,6 @@ function matchCard(m,isHT){
       </div>
     </div>
 
-    ${buildXgChartSVG(m,xg,lg.color)}
-
     ${hasS?`<div class="stats-grid">
       <div class="stat-chip"><span class="stat-icon">🎯</span><div><div class="stat-vals">${m.hSh||0} &ndash; ${m.aSh||0}</div><div class="stat-lbl">TIRI</div></div></div>
       <div class="stat-chip"><span class="stat-icon">🥅</span><div><div class="stat-vals">${m.hSOT||0} &ndash; ${m.aSOT||0}</div><div class="stat-lbl">IN PORTA</div></div></div>
@@ -1612,6 +1682,38 @@ function matchCard(m,isHT){
           <div class="scorer-bar"><div class="scorer-bar-fill" style="width:${aSPct}%;background:#38bdf8"></div></div>
         </div>
       </div>
+      ${(()=>{
+        const hAtk=bestAttackerScorer(m.home,xg.h);
+        const aAtk=bestAttackerScorer(m.away,xg.a);
+        const hMidL=bestMidfielderScorer(m.home,xg.h);
+        const aMidL=bestMidfielderScorer(m.away,xg.a);
+        const hDefL=bestDefenderScorer(m.home,xg.h);
+        const aDefL=bestDefenderScorer(m.away,xg.a);
+        function scorerRow(emoji,label,home,away,color){
+          return `<div style="margin-top:8px;border-top:1px solid #1e293b;padding-top:7px">
+            <div style="font-size:8px;font-weight:800;color:#475569;letter-spacing:1.5px;margin-bottom:5px">${emoji} ${label}</div>
+            <div style="display:flex;gap:6px">
+              <div style="flex:1;background:#0f172a;border-radius:8px;padding:6px 8px;border:1px solid #1e293b33">
+                <div style="font-size:10px;font-weight:900;color:#f1f5f9;font-family:'Oswald',sans-serif">${home.name}</div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:2px">
+                  <span style="font-size:8px;color:#475569">${home.pos} · ${home.goals||0}⚽</span>
+                  <span style="font-size:13px;font-weight:900;color:${color};font-family:'Oswald',sans-serif">${home.pct}%</span>
+                </div>
+              </div>
+              <div style="flex:1;background:#0f172a;border-radius:8px;padding:6px 8px;border:1px solid #1e293b33">
+                <div style="font-size:10px;font-weight:900;color:#f1f5f9;font-family:'Oswald',sans-serif">${away.name}</div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:2px">
+                  <span style="font-size:8px;color:#475569">${away.pos} · ${away.goals||0}⚽</span>
+                  <span style="font-size:13px;font-weight:900;color:#38bdf8;font-family:'Oswald',sans-serif">${away.pct}%</span>
+                </div>
+              </div>
+            </div>`;
+        }
+        return scorerRow('⚡','ATTACCANTE PROBABILE',hAtk,aAtk,lg.color)
+             + scorerRow('🎯','CENTROCAMPISTA',hMidL,aMidL,'#a78bfa')
+             + scorerRow('🛡️','DIFENSORE',hDefL,aDefL,'#34d399')
+             + '</div>';
+      })()}
     </div>
     ${(()=>{
       const od=calcLiveOdds(m);
@@ -1954,11 +2056,13 @@ function renderMultipla(el){
   if(balanced.length>=2&&balanced.some(p=>safe.every(s=>s.fix.id!==p.fix.id||s.type!==p.type))) sections.push({title:'MULTIPLA BILANCIATA',icon:'[=]',color:'#facc15',picks:balanced});
   if(risky.length>=3) sections.push({title:'MULTIPLA AGGRESSIVA',icon:'🔥',color:'#fb923c',picks:risky});
 
+  const srcLabel = dynamicFixtures.length>0 ? '<div style="font-size:9px;color:#38bdf8;margin-top:2px">📡 Partite reali oggi+domani</div>' : '<div style="font-size:9px;color:#475569;margin-top:2px">📋 Calendario fisso</div>';
   el.innerHTML='<div class="section-header">'
     +'<span style="font-size:20px">🎰</span>'
     +'<div>'
     +'<div style="font-family:Oswald,sans-serif;font-size:14px;font-weight:700;color:#a78bfa">MIGLIORE MULTIPLA</div>'
     +'<div style="font-size:10px;color:#475569">Selezioni ottimali combinate   xG FUSION 51 fonti</div>'
+    +srcLabel
     +'</div>'
     +'</div>'
     +sections.map(s=>'<div style="margin-bottom:6px;padding:6px 10px 0;border-left:3px solid '+s.color+'">'
@@ -2061,6 +2165,7 @@ function render(){
   }
   if(currentTab==='over25'){
     const all=getUpcoming().filter(f=>currentLeague==='all'||f.league===currentLeague);
+    const source = dynamicFixtures.length>0 ? '📡 Partite reali oggi+domani' : '📋 Calendario fisso';
     const ranked=all
       .map(f=>({f,pred:predictMatch(f)}))
       .sort((a,b)=>b.pred.over25-a.pred.over25)
@@ -2071,6 +2176,7 @@ function render(){
       <div>
         <div style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;color:#4ade80">TOP 5 &mdash; OVER 2.5 GOL</div>
         <div style="font-size:10px;color:#475569">Dixon-Coles   Poisson bivariato   xG FUSION 51 fonti</div>
+        <div style="font-size:9px;color:#38bdf8;margin-top:2px">${source}</div>
       </div>
     </div>`+o25Cards;
     return;
