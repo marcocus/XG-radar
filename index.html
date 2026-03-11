@@ -154,17 +154,20 @@ body.desktop-mode .scorer-name{font-size:16px!important}
 .gol-overlay{position:fixed;inset:0;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity .3s}
 .gol-overlay.show{opacity:1}
 .gol-overlay.hide{opacity:0;transition:opacity .8s}
-.gol-text{font-family:'Oswald',sans-serif;font-size:clamp(80px,22vw,160px);font-weight:900;letter-spacing:8px;color:#fff;text-shadow:0 0 60px #22c55e,0 0 120px #22c55e,0 0 200px #22c55e,0 0 20px #fff;animation:golpop .35s cubic-bezier(.17,.67,.35,1.4) forwards}
-.gol-emoji{font-size:clamp(40px,12vw,80px);animation:golpop .35s .1s cubic-bezier(.17,.67,.35,1.4) both;display:block;margin-bottom:4px}
-.gol-team{font-family:'Oswald',sans-serif;font-size:clamp(22px,6vw,42px);font-weight:700;color:#4ade80;letter-spacing:4px;margin-top:-10px;animation:golslide .5s .2s ease forwards;opacity:0;transform:translateY(20px)}
-.gol-score{font-family:'Oswald',sans-serif;font-size:clamp(28px,8vw,56px);font-weight:900;color:#fff;margin-top:12px;opacity:0;animation:golslide .5s .35s ease forwards;transform:translateY(20px)}
-.gol-scorer-name{font-family:'Oswald',sans-serif;font-size:clamp(14px,4vw,24px);font-weight:700;color:#facc15;letter-spacing:2px;margin-top:8px;opacity:0;animation:golslide .5s .5s ease forwards;transform:translateY(20px)}
-.gol-bg{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(34,197,94,0.55) 0%,rgba(10,14,26,0.97) 65%)}
-.gol-ring{position:absolute;width:min(80vw,80vh);height:min(80vw,80vh);border-radius:50%;border:3px solid rgba(34,197,94,0.4);animation:golring 1s ease-out forwards}
-.gol-ring2{animation-delay:.3s;opacity:0}
-.gol-particles{position:absolute;inset:0;overflow:hidden}
+.gol-text{font-family:'Oswald',sans-serif;font-size:clamp(70px,18vw,140px);font-weight:900;letter-spacing:8px;color:#fff;text-shadow:0 0 60px #22c55e,0 0 120px #22c55e,0 0 200px #22c55e;animation:golpop .35s cubic-bezier(.17,.67,.35,1.4) forwards}
+.gol-team{font-family:'Oswald',sans-serif;font-size:clamp(20px,5vw,38px);font-weight:700;color:#4ade80;letter-spacing:4px;margin-top:-6px;animation:golslide .5s .2s ease forwards;opacity:0;transform:translateY(20px)}
+.gol-score{font-family:'Oswald',sans-serif;font-size:clamp(26px,7vw,52px);font-weight:900;color:#fff;margin-top:10px;opacity:0;animation:golslide .5s .35s ease forwards;transform:translateY(20px)}
+.gol-scorer-name{font-family:'Oswald',sans-serif;font-size:clamp(13px,3.5vw,22px);font-weight:700;color:#facc15;letter-spacing:2px;margin-top:6px;opacity:0;animation:golslide .5s .5s ease forwards;transform:translateY(20px)}
+.gol-bg{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(34,197,94,0.6) 0%,rgba(10,14,26,0.97) 65%)}
+.gol-net-wrap{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:min(60vw,320px);animation:netslide .4s .1s cubic-bezier(.17,.67,.35,1.4) both;opacity:0}
+.gol-ball-wrap{position:absolute;bottom:min(18vw,110px);left:50%;transform:translateX(-50%);animation:ballshoot .5s .05s cubic-bezier(.17,.67,.35,1.4) both;opacity:0}
+.gol-particles{position:absolute;inset:0;overflow:hidden;pointer-events:none}
 @keyframes golpop{0%{transform:scale(0.4) rotate(-8deg);opacity:0}60%{transform:scale(1.12) rotate(2deg)}100%{transform:scale(1) rotate(0deg);opacity:1}}
 @keyframes golslide{to{opacity:1;transform:translateY(0)}}
+@keyframes netslide{0%{opacity:0;transform:translateX(-50%) scaleY(0.3)}100%{opacity:1;transform:translateX(-50%) scaleY(1)}}
+@keyframes ballshoot{0%{opacity:0;transform:translateX(-50%) scale(0.2) translateY(40px)}60%{transform:translateX(-50%) scale(1.15) translateY(-8px)}100%{opacity:1;transform:translateX(-50%) scale(1) translateY(0)}}
+@keyframes moneyfall{0%{transform:translateY(-10vh) rotate(var(--rot0)) scale(1);opacity:1}100%{transform:translateY(110vh) rotate(var(--rot1)) scale(0.7);opacity:0}}
+@keyframes moneysway{0%,100%{margin-left:0}50%{margin-left:var(--sway)}}
 @keyframes golring{0%{transform:scale(0.2);opacity:1}100%{transform:scale(2.5);opacity:0}}
 @keyframes particle{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(0);opacity:0}}
 @keyframes flashbg{0%,100%{background:rgba(34,197,94,0)}25%,75%{background:rgba(34,197,94,0.15)}}
@@ -1356,16 +1359,38 @@ function logoImg(name, size){
 function spawnParticles(){
   const c = document.getElementById('golParticles');
   c.innerHTML = '';
-  const colors = ['#4ade80','#facc15','#38bdf8','#a78bfa','#fff','#fb923c'];
-  for(let i=0;i<40;i++){
+  // Soldi e banconote che cadono come coriandoli
+  const moneyEmojis = ['💵','💶','💴','💷','💰','🤑','💸','💵','💶','💵'];
+  const coinColors = ['#facc15','#fbbf24','#f59e0b','#22c55e','#4ade80'];
+  for(let i=0;i<35;i++){
     const p=document.createElement('div');
-    const dx=(Math.random()-0.5)*120+'vw';
-    const dy=(Math.random()*-80-20)+'vh';
-    const color=colors[Math.floor(Math.random()*colors.length)];
-    const size=Math.random()*10+4;
-    p.style.cssText=`position:absolute;left:${40+Math.random()*20}%;top:${40+Math.random()*20}%;
-      width:${size}px;height:${size}px;border-radius:50%;background:${color};
-      --dx:${dx};--dy:${dy};animation:particle ${1+Math.random()}s ease forwards`;
+    const left=Math.random()*100;
+    const delay=Math.random()*1.5;
+    const dur=1.5+Math.random()*2;
+    const rot0=(Math.random()-0.5)*180+'deg';
+    const rot1=(Math.random()-0.5)*720+'deg';
+    const sway=(Math.random()-0.5)*60+'px';
+    const isCoin = Math.random()<0.35;
+    if(isCoin){
+      // Moneta rotonda
+      const size=14+Math.random()*12;
+      const color=coinColors[Math.floor(Math.random()*coinColors.length)];
+      p.style.cssText=`position:absolute;left:${left}%;top:-5%;
+        width:${size}px;height:${size}px;border-radius:50%;
+        background:${color};border:2px solid #fff4;
+        box-shadow:0 0 6px ${color}88;
+        --rot0:${rot0};--rot1:${rot1};--sway:${sway};
+        animation:moneyfall ${dur}s ${delay}s linear forwards, moneysway ${dur/2}s ${delay}s ease-in-out infinite`;
+    } else {
+      // Banconota emoji
+      const size=18+Math.random()*14;
+      const emoji=moneyEmojis[Math.floor(Math.random()*moneyEmojis.length)];
+      p.style.cssText=`position:absolute;left:${left}%;top:-5%;
+        font-size:${size}px;line-height:1;
+        --rot0:${rot0};--rot1:${rot1};--sway:${sway};
+        animation:moneyfall ${dur}s ${delay}s linear forwards, moneysway ${dur/2}s ${delay}s ease-in-out infinite`;
+      p.textContent=emoji;
+    }
     c.appendChild(p);
   }
 }
@@ -1413,12 +1438,32 @@ function showGol(teamName, hScore, aScore, scorer){
   // Rebuild overlay to reset CSS animations
   const o = document.getElementById('golOverlay');
   const scorerHtml = scorer ? '<div class="gol-scorer-name">⚽ '+scorer+'</div>' : '';
+  // Rete SVG
+  const netSvg = '<svg width="100%" height="90" viewBox="0 0 320 90" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">'
+    // Pali
+    +'<rect x="0" y="0" width="6" height="90" fill="#e2e8f0" rx="2"/>'
+    +'<rect x="314" y="0" width="6" height="90" fill="#e2e8f0" rx="2"/>'
+    +'<rect x="0" y="0" width="320" height="6" fill="#e2e8f0" rx="2"/>'
+    // Rete verticali
+    +'<line x1="40" y1="0" x2="30" y2="90" stroke="rgba(255,255,255,0.35)" stroke-width="1.2"/>'
+    +'<line x1="80" y1="0" x2="65" y2="90" stroke="rgba(255,255,255,0.35)" stroke-width="1.2"/>'
+    +'<line x1="120" y1="0" x2="100" y2="90" stroke="rgba(255,255,255,0.35)" stroke-width="1.2"/>'
+    +'<line x1="160" y1="0" x2="135" y2="90" stroke="rgba(255,255,255,0.35)" stroke-width="1.2"/>'
+    +'<line x1="200" y1="0" x2="185" y2="90" stroke="rgba(255,255,255,0.35)" stroke-width="1.2"/>'
+    +'<line x1="240" y1="0" x2="225" y2="90" stroke="rgba(255,255,255,0.35)" stroke-width="1.2"/>'
+    +'<line x1="280" y1="0" x2="265" y2="90" stroke="rgba(255,255,255,0.35)" stroke-width="1.2"/>'
+    // Rete orizzontali
+    +'<line x1="6" y1="22" x2="314" y2="22" stroke="rgba(255,255,255,0.35)" stroke-width="1.2"/>'
+    +'<line x1="6" y1="44" x2="314" y2="44" stroke="rgba(255,255,255,0.35)" stroke-width="1.2"/>'
+    +'<line x1="6" y1="66" x2="314" y2="66" stroke="rgba(255,255,255,0.35)" stroke-width="1.2"/>'
+    +'</svg>';
   o.innerHTML='<div class="gol-bg" id="golBg"></div>'
-    +'<div class="gol-ring"></div>'
-    +'<div class="gol-ring gol-ring2"></div>'
     +'<div class="gol-particles" id="golParticles"></div>'
+    // Rete in basso
+    +'<div class="gol-net-wrap">'+netSvg+'</div>'
+    // Pallone che entra
+    +'<div class="gol-ball-wrap"><span style="font-size:clamp(40px,12vw,72px);display:block;filter:drop-shadow(0 0 20px #22c55e)">⚽</span></div>'
     +'<div style="position:relative;text-align:center;z-index:2">'
-    +'<span class="gol-emoji">&#9917;</span>'
     +'<div class="gol-text">GOL!</div>'
     +'<div class="gol-team">'+teamName.toUpperCase()+'</div>'
     +'<div class="gol-score">'+hScore+' - '+aScore+'</div>'
