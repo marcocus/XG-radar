@@ -1,3 +1,5 @@
+
+​You​
 <!DOCTYPE html>
 
 <html lang="it">
@@ -64,16 +66,16 @@ body.desktop-mode .scorer-name{font-size:16px!important}
 .view-toggle.active{border-color:#7c3aed;background:#2e1065;color:#a78bfa}
 
 /* CARD */
-.card{background:linear-gradient(135deg,#0f172a,#111827);border:1px solid #1e293b;border-left-width:8px;border-left-color:#1e293b;border-radius:16px;margin-bottom:14px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.5);transition:transform .2s}
+.card{background:linear-gradient(135deg,#0f172a,#111827);border:3px solid #1e293b;border-radius:16px;margin-bottom:14px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.5);transition:transform .2s}
 .card:hover{transform:translateY(-1px)}
-.card.prob-hot{border-left-color:#22c55e;animation:hotglow 0.85s ease-in-out infinite}
-.card.prob-warm{border-left-color:#f59e0b;box-shadow:0 4px 22px rgba(245,158,11,0.2)}
-.card.prob-mid{border-left-color:#38bdf8}
-.card.prob-low{border-left-color:#334155}
+.card.prob-hot{border-color:#22c55e;animation:hotglow 0.85s ease-in-out infinite}
+.card.prob-warm{border-color:#f59e0b;box-shadow:0 4px 22px rgba(245,158,11,0.25)}
+.card.prob-mid{border-color:#38bdf8}
+.card.prob-low{border-color:#334155}
 @keyframes hotglow{
-  0%  {box-shadow:0 4px 20px rgba(0,0,0,0.5), 0 0 0 0   rgba(34,197,94,0.0)}
-  50% {box-shadow:0 6px 30px rgba(34,197,94,0.3), 0 0 0 6px rgba(34,197,94,0.1)}
-  100%{box-shadow:0 4px 20px rgba(0,0,0,0.5), 0 0 0 0   rgba(34,197,94,0.0)}
+  0%  {box-shadow:0 4px 20px rgba(0,0,0,0.5),0 0 8px rgba(34,197,94,0.0)}
+  50% {box-shadow:0 6px 30px rgba(34,197,94,0.3),0 0 18px rgba(34,197,94,0.25)}
+  100%{box-shadow:0 4px 20px rgba(0,0,0,0.5),0 0 8px rgba(34,197,94,0.0)}
 }
 .card-header{background:linear-gradient(90deg,#0f172a,#1e1b4b);border-bottom:1px solid #1e293b;padding:8px 14px;display:flex;justify-content:space-between;align-items:center}
 .card-body{padding:14px}
@@ -81,7 +83,7 @@ body.desktop-mode .scorer-name{font-size:16px!important}
 /* TEAMS */
 .teams{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:8px}
 .team-block{flex:1}
-.team-name{font-size:17px;font-weight:900;color:#f1f5f9;font-family:'Oswald',sans-serif;letter-spacing:.5px}
+.team-name{font-size:17px;font-weight:900;color:#f1f5f9;font-family:'Oswald',sans-serif;letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .team-sub{font-size:9px;color:#475569;margin-top:2px}
 .score-center{text-align:center;flex-shrink:0}
 .score{font-size:34px;font-weight:900;font-family:'Oswald',sans-serif;letter-spacing:6px;color:#fff;text-shadow:0 0 20px rgba(167,139,250,0.5)}
@@ -811,9 +813,9 @@ const DEFENDER_DB = {
   ],
   // -- AS ROMA --
   "AS Roma": [
-    {name:"Mats Hummels",         pos:"CB", h:191, goals:2, xg90:0.08, sp:8, head:9, form:3},
-    {name:"Gianluca Mancini",     pos:"CB", h:188, goals:2, xg90:0.08, sp:7, head:8, form:3},
+    {name:"Gianluca Mancini",     pos:"CB", h:188, goals:3, xg90:0.09, sp:7, head:8, form:4},
     {name:"Leonardo Spinazzola",  pos:"LB", h:180, goals:1, xg90:0.06, sp:6, head:5, form:3},
+    {name:"Zeki Celik",           pos:"RB", h:178, goals:1, xg90:0.05, sp:5, head:5, form:3},
   ],
   // -- LIVERPOOL FC -- (UCL set piece kings: Virgil van Dijk + Konate)
   "Liverpool FC": [
@@ -1497,6 +1499,105 @@ function checkGoals(matches){
   }
 }
 
+
+// ======================================================================
+//  MARCATORI REALI — aggiornati via Claude API con web search
+//  Cache globale: { "Home vs Away": { atk, mid, def } }
+//  Aggiornato al caricamento e ogni 30 minuti
+// ======================================================================
+let scorerCache = {};
+let scorerCacheFetching = new Set();
+
+async function fetchScorerStats(home, away) {
+  const key = home + ' vs ' + away;
+  if (scorerCache[key] || scorerCacheFetching.has(key)) return;
+  scorerCacheFetching.add(key);
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 400,
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        messages: [{
+          role: 'user',
+          content: `Cerca le statistiche 2025-26 stagione corrente per ${home} vs ${away}.
+Restituisci SOLO JSON valido, nessun testo fuori dal JSON:
+{
+  "atk": { "name": "Nome Cognome", "goals": 12, "pct": 42, "pos": "ST" },
+  "mid": { "name": "Nome Cognome", "goals": 6, "pct": 22, "pos": "CM" },
+  "def": { "name": "Nome Cognome", "goals": 3, "pct": 12, "pos": "CB" }
+}
+Scegli il marcatore più probabile tra le due squadre per ogni ruolo basandoti su: gol stagione, xG/90, forma recente, calci piazzati. pct = probabilità % di segnare nel match (0-65).`
+        }]
+      })
+    });
+    const data = await resp.json();
+    const textBlock = (data.content || []).find(b => b.type === 'text');
+    if (textBlock) {
+      const raw = textBlock.text.replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(raw);
+      scorerCache[key] = parsed;
+      render(); // aggiorna la UI con i nuovi dati
+    }
+  } catch(e) {
+    // fallback silenzioso — usa DB statico
+  } finally {
+    scorerCacheFetching.delete(key);
+  }
+}
+
+function getScorerData(home, away, hXg, aXg) {
+  const key = home + ' vs ' + away;
+  if (!scorerCache[key]) {
+    fetchScorerStats(home, away); // avvia fetch in background
+    // intanto usa DB statico
+    const hAtk = bestAttackerScorer(home, hXg);
+    const aAtk = bestAttackerScorer(away, aXg);
+    const hMid = bestMidfielderScorer(home, hXg);
+    const aMid = bestMidfielderScorer(away, aXg);
+    const hDef = bestDefenderScorer(home, hXg);
+    const aDef = bestDefenderScorer(away, aXg);
+    return {
+      atk: hAtk.pct >= aAtk.pct ? {...hAtk, squad:home} : {...aAtk, squad:away},
+      mid: hMid.pct >= aMid.pct ? {...hMid, squad:home} : {...aMid, squad:away},
+      def: hDef.pct >= aDef.pct ? {...hDef, squad:home} : {...aDef, squad:away},
+    };
+  }
+  const c = scorerCache[key];
+  return {
+    atk: { name: c.atk.name, goals: c.atk.goals, pct: c.atk.pct, pos: c.atk.pos, squad: '' },
+    mid: { name: c.mid.name, goals: c.mid.goals, pct: c.mid.pct, pos: c.mid.pos, squad: '' },
+    def: { name: c.def.name, goals: c.def.goals, pct: c.def.pct, pos: c.def.pos, squad: '' },
+  };
+}
+
+function scorerThreeCol(atk, mid, def, lgCol) {
+  function cell(p, emoji, label, ac) {
+    const nameLen = (p.name||'').length;
+    const fs = nameLen > 18 ? '9px' : nameLen > 14 ? '10px' : '12px';
+    return `<div style="flex:1;background:#0a0e1a;border:1px solid #1e293b;border-radius:9px;padding:6px 5px;text-align:center;min-width:0">
+      <div style="font-size:10px;margin-bottom:1px">${emoji}</div>
+      <div style="font-family:'Oswald',sans-serif;font-size:20px;font-weight:900;color:${ac};line-height:1">${p.pct}%</div>
+      <div style="font-size:7px;color:#475569;margin-bottom:4px">${label}</div>
+      <div style="border-top:1px solid #1e293b;padding-top:4px">
+        <div style="font-family:'Oswald',sans-serif;font-size:${fs};font-weight:900;color:#f1f5f9;line-height:1.2;word-break:break-word">${p.name||'—'}</div>
+        <div style="font-size:7px;color:#475569;margin-top:2px">${p.pos||''} · ${p.goals||0}⚽</div>
+      </div>
+    </div>`;
+  }
+  return '<div style="border-top:1px solid #1e293b;padding-top:8px;margin-top:8px">'
+    + '<div style="font-size:8px;font-weight:800;color:#7c3aed;letter-spacing:2px;margin-bottom:5px">🎯 MARCATORI PROBABILI</div>'
+    + '<div style="display:flex;gap:5px">'
+    + cell(atk, '⚡', 'ATT', '#fb923c')
+    + cell(mid, '🎯', 'CENT', '#a78bfa')
+    + cell(def, '🛡️', 'DIF', '#34d399')
+    + '</div></div>';
+}
 async function fetchLive(){
   document.getElementById('statusDot').style.background='#38bdf8';
   document.getElementById('statusText').textContent=' Connessione api-sports.io...';
@@ -1554,8 +1655,8 @@ async function fetchLive(){
   checkGoals([...ht,...ft]);
   if(hasLive){
     document.getElementById('statusDot').style.background='#4ade80';
-    document.getElementById('statusText').textContent='[OK] '+(ht.length+ft.length)+' partite live   prossimo check 15s';
-    let countdown2=15;
+    document.getElementById('statusText').textContent='[OK] '+(ht.length+ft.length)+' partite live   prossimo check 20s';
+    let countdown2=20;
     if(window._countdownTimer) clearInterval(window._countdownTimer);
     window._countdownTimer=setInterval(()=>{
       countdown2--;
@@ -1569,9 +1670,9 @@ async function fetchLive(){
     else if(ft.length&&!ht.length&&currentTab==='future'){setTabId('ft');}
   }else{
     document.getElementById('statusDot').style.background='#475569';
-    document.getElementById('statusText').textContent='Nessuna partita live   prossimo check 15s';
+    document.getElementById('statusText').textContent='Nessuna partita live   prossimo check 20s';
     // Start countdown
-    let countdown=15;
+    let countdown=20;
     if(window._countdownTimer) clearInterval(window._countdownTimer);
     window._countdownTimer=setInterval(()=>{
       countdown--;
@@ -1708,7 +1809,7 @@ function matchCard(m,isHT){
     <div class="scorer-section">
       <div class="scorer-title">🎯 CHI SEGNA IL PROSSIMO GOL?</div>
       <div class="scorer-row">
-        <div class="scorer-name">${m.home}</div>
+        <div class="scorer-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.home}${(td(m.home).form>=12)?'🔥':''}</div>
         <div class="scorer-bar-wrap">
           <div style="display:flex;justify-content:space-between;align-items:center">
             <span style="font-size:9px;color:#475569">${hT.form>=12?'🔥 In forma':'📊 Media'}</span>
@@ -1718,7 +1819,7 @@ function matchCard(m,isHT){
         </div>
       </div>
       <div class="scorer-row">
-        <div class="scorer-name">${m.away}</div>
+        <div class="scorer-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.away}${(td(m.away).form>=12)?'🔥':''}</div>
         <div class="scorer-bar-wrap">
           <div style="display:flex;justify-content:space-between;align-items:center">
             <span style="font-size:9px;color:#475569">${aT.form>=12?'🔥 In forma':'📊 Media'}</span>
@@ -1728,36 +1829,8 @@ function matchCard(m,isHT){
         </div>
       </div>
       ${(()=>{
-        const hAtk=bestAttackerScorer(m.home,xg.h);
-        const aAtk=bestAttackerScorer(m.away,xg.a);
-        const hMidL=bestMidfielderScorer(m.home,xg.h);
-        const aMidL=bestMidfielderScorer(m.away,xg.a);
-        const hDefL=bestDefenderScorer(m.home,xg.h);
-        const aDefL=bestDefenderScorer(m.away,xg.a);
-        function scorerRow(emoji,label,home,away,color){
-          return `<div style="margin-top:8px;border-top:1px solid #1e293b;padding-top:7px">
-            <div style="font-size:8px;font-weight:800;color:#475569;letter-spacing:1.5px;margin-bottom:5px">${emoji} ${label}</div>
-            <div style="display:flex;gap:6px">
-              <div style="flex:1;background:#0f172a;border-radius:8px;padding:6px 8px;border:1px solid #1e293b33">
-                <div style="font-size:10px;font-weight:900;color:#f1f5f9;font-family:'Oswald',sans-serif">${home.name}</div>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:2px">
-                  <span style="font-size:8px;color:#475569">${home.pos} · ${home.goals||0}⚽</span>
-                  <span style="font-size:13px;font-weight:900;color:${color};font-family:'Oswald',sans-serif">${home.pct}%</span>
-                </div>
-              </div>
-              <div style="flex:1;background:#0f172a;border-radius:8px;padding:6px 8px;border:1px solid #1e293b33">
-                <div style="font-size:10px;font-weight:900;color:#f1f5f9;font-family:'Oswald',sans-serif">${away.name}</div>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:2px">
-                  <span style="font-size:8px;color:#475569">${away.pos} · ${away.goals||0}⚽</span>
-                  <span style="font-size:13px;font-weight:900;color:#38bdf8;font-family:'Oswald',sans-serif">${away.pct}%</span>
-                </div>
-              </div>
-            </div>`;
-        }
-        return scorerRow('⚡','ATTACCANTE PROBABILE',hAtk,aAtk,lg.color)
-             + scorerRow('🎯','CENTROCAMPISTA',hMidL,aMidL,'#a78bfa')
-             + scorerRow('🛡️','DIFENSORE',hDefL,aDefL,'#34d399')
-             + '</div>';
+        const sc = getScorerData(m.home, m.away, xg.h, xg.a);
+        return scorerThreeCol(sc.atk, sc.mid, sc.def, lg.color);
       })()}
     </div>
     ${(()=>{
@@ -1851,13 +1924,8 @@ function futureCard(fix){
   const spStars='*'.repeat(Math.round(topDef.sp/2));
   const hMid=bestMidfielderScorer(fix.home, pred.hxg);
   const aMid=bestMidfielderScorer(fix.away, pred.axg);
-  const topMid=hMid.pct>=aMid.pct
-    ?{...hMid, squad:fix.home, color:lg.color}
-    :{...aMid, squad:fix.away, color:'#38bdf8'};
-  const midPosLabel={'AM':'Trequartista','CM':'Centrocampista','DM':'Mediano'}[topMid.pos]||topMid.pos;
-  const midSpStars='*'.repeat(Math.round(topMid.sp/2));
   return `
-<div class="card future-card" style="border-left-color:${lg.color}">
+<div class="card future-card" style="border-color:${lg.color}">
   <div class="card-header">
     <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
       <span>${lg.flag}</span>
@@ -1870,7 +1938,7 @@ function futureCard(fix){
   <div class="card-body">
     <div class="teams" style="margin-bottom:10px">
       <div>
-        <div style="display:flex;align-items:center;gap:6px">${logoImg(fix.home,26)}<div><div class="team-name" style="color:${pred.winner===fix.home?lg.color:'#f1f5f9'}">${fix.home} ${pred.winner===fix.home?'🏆':''}</div>
+        <div style="display:flex;align-items:center;gap:6px">${logoImg(fix.home,26)}<div><div class="team-name" style="color:${pred.winner===fix.home?lg.color:'#f1f5f9'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${fix.home}${pred.winner===fix.home?' 🏆':''} ${td(fix.home).form>=12?'🔥':''}</div>
         <div class="team-sub">#${hT.rank}   Forma ${hT.form}/15</div></div></div>
       </div>
       <div style="text-align:center;flex-shrink:0">
@@ -1879,7 +1947,7 @@ function futureCard(fix){
       </div>
       <div style="text-align:right">
         <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">
-        <div style="text-align:right"><div class="team-name" style="color:${pred.winner===fix.away?'#38bdf8':'#f1f5f9'}">${pred.winner===fix.away?'🏆':''} ${fix.away}</div>
+        <div style="text-align:right"><div class="team-name" style="color:${pred.winner===fix.away?'#38bdf8':'#f1f5f9'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${pred.winner===fix.away?' 🏆':''} ${fix.away} ${td(fix.away).form>=12?'🔥':''}</div>
         <div class="team-sub">#${aT.rank}   Forma ${aT.form}/15</div></div>
         ${logoImg(fix.away,26)}</div>
       </div>
@@ -1904,56 +1972,10 @@ function futureCard(fix){
       <div class="odd-box"><div class="odd-val" style="color:${pred.btts>=55?'#facc15':'#475569'}">${pred.btts}%</div><div class="odd-label">GG</div></div>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px">
-
-      <!-- DIFENSORE -->
-      <div style="background:linear-gradient(135deg,#0f172a,#1a1040);border:1px solid #2e1065;border-radius:10px;padding:7px 8px">
-        <div style="font-size:7px;font-weight:800;color:#a78bfa;letter-spacing:1.5px;margin-bottom:5px">🛡️ DIFENSORE</div>
-        <div style="display:flex;align-items:center;gap:6px">
-          <div style="background:${topDef.color}22;border:1px solid ${topDef.color}44;border-radius:8px;padding:3px 6px;text-align:center;min-width:38px;flex-shrink:0">
-            <div style="font-family:'Oswald',sans-serif;font-size:16px;font-weight:900;color:${topDef.color};line-height:1">${topDef.pct}%</div>
-            <div style="font-size:6px;color:#475569;margin-top:1px">GOL%</div>
-          </div>
-          <div style="flex:1;min-width:0">
-            <div style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:900;color:#f1f5f9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${topDef.name}</div>
-            <div style="font-size:7px;color:${topDef.color};font-weight:700">${topDef.squad}   ${posLabel}</div>
-            <div style="display:flex;gap:4px;margin-top:3px;flex-wrap:wrap">
-              <span style="font-size:7px;background:#1e293b;color:#94a3b8;padding:1px 4px;border-radius:20px">GOL ${topDef.goals}</span>
-              <span style="font-size:7px;background:#1e293b;color:#94a3b8;padding:1px 4px;border-radius:20px">AERO️ ${headStars}</span>
-              <span style="font-size:7px;background:#1e293b;color:#94a3b8;padding:1px 4px;border-radius:20px">📐 ${spStars}</span>
-            </div>
-          </div>
-        </div>
-        <div style="height:3px;background:#1e293b;border-radius:4px;margin-top:5px">
-          <div style="height:100%;width:${topDef.pct}%;background:linear-gradient(90deg,${topDef.color},${topDef.color}88);border-radius:4px;transition:width 1.2s"></div>
-        </div>
-      </div>
-
-      <!-- CENTROCAMPISTA -->
-      <div style="background:linear-gradient(135deg,#0f172a,#001a1a);border:1px solid #065f46;border-radius:10px;padding:7px 8px">
-        <div style="font-size:7px;font-weight:800;color:#34d399;letter-spacing:1.5px;margin-bottom:5px">FLASH CENTROCAMPISTA</div>
-        <div style="display:flex;align-items:center;gap:6px">
-          <div style="background:${topMid.color}22;border:1px solid ${topMid.color}44;border-radius:8px;padding:3px 6px;text-align:center;min-width:38px;flex-shrink:0">
-            <div style="font-family:'Oswald',sans-serif;font-size:16px;font-weight:900;color:#34d399;line-height:1">${topMid.pct}%</div>
-            <div style="font-size:6px;color:#475569;margin-top:1px">GOL%</div>
-          </div>
-          <div style="flex:1;min-width:0">
-            <div style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:900;color:#f1f5f9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${topMid.name}</div>
-            <div style="font-size:7px;color:#34d399;font-weight:700">${topMid.squad}   ${midPosLabel}</div>
-            <div style="display:flex;gap:4px;margin-top:3px;flex-wrap:wrap">
-              <span style="font-size:7px;background:#1e293b;color:#94a3b8;padding:1px 4px;border-radius:20px">GOL ${topMid.goals}</span>
-              <span style="font-size:7px;background:#1e293b;color:#94a3b8;padding:1px 4px;border-radius:20px">📐 ${midSpStars}</span>
-              <span style="font-size:7px;background:#1e293b;color:#94a3b8;padding:1px 4px;border-radius:20px">🎯 xG/90</span>
-            </div>
-          </div>
-        </div>
-        <div style="height:3px;background:#1e293b;border-radius:4px;margin-top:5px">
-          <div style="height:100%;width:${Math.min(topMid.pct,100)}%;background:linear-gradient(90deg,#34d399,#34d39988);border-radius:4px;transition:width 1.2s"></div>
-        </div>
-      </div>
-
+    <div style="margin-top:8px">
+      ${(()=>{ const sc=getScorerData(fix.home,fix.away,pred.hxg,pred.axg); return scorerThreeCol(sc.atk,sc.mid,sc.def,lg.color); })()}
     </div>
-    <div style="font-size:7px;color:#334155;margin-top:3px;text-align:right">FBref xG/90   WhoScored SP   Understat</div>
+    <div style="font-size:7px;color:#334155;margin-top:3px;text-align:right">Stats aggiornate via AI · FBref · WhoScored · Understat</div>
   </div>
 </div>`;
 }
@@ -1968,7 +1990,7 @@ function over25Card(fix, rank){
   const barColor=pred.over25>=70?'#4ade80':pred.over25>=55?'#facc15':'#fb923c';
   const rankEmoji=['🥇','🥈','🥉','4️','5️'][rank]||'🔹';
   return `
-<div class="card" style="border-left-color:${barColor};border-left-width:8px">
+<div class="card" style="border-color:${barColor}">
   <div class="card-header">
     <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
       <span style="font-size:18px">${rankEmoji}</span>
@@ -2236,7 +2258,7 @@ function render(){
     el.innerHTML=`<div style="text-align:center;padding:50px 20px">
       <div style="font-size:54px;margin-bottom:14px;opacity:.25">📡</div>
       <div style="font-family:'Oswald',sans-serif;font-size:22px;font-weight:900;color:#334155;margin-bottom:8px">NESSUNA PARTITA IN CORSO</div>
-      <div style="font-size:12px;color:#475569;margin-bottom:22px">Aggiornamento automatico ogni 15 secondi</div>
+      <div style="font-size:12px;color:#475569;margin-bottom:22px">Aggiornamento automatico ogni 20 secondi</div>
       <button onclick="setTabId('future');render();" class="ai-btn" style="font-size:13px;padding:10px 22px">🔮 Vedi prossime partite</button>
     </div>`;
     return;
@@ -2342,7 +2364,7 @@ function getOddsForMatch(home, away){
 }
 
 buildFilters();render();fetchLive();fetchFixtures();fetchOdds();
-setInterval(()=>{ if(!document.hidden) fetchLive(); }, 15000);
+setInterval(()=>{ if(!document.hidden) fetchLive(); }, 20000);
 setInterval(()=>{ fetchFixtures(); }, 300000);
 setInterval(()=>{ fetchOdds(); }, 120000);
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden){ fetchLive(); fetchOdds(); } });
