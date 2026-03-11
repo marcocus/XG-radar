@@ -1,4 +1,3 @@
-​You​
 <!DOCTYPE html>
 
 <html lang="it">
@@ -1508,7 +1507,7 @@ async function askClaudeScorer(team, home, away, hS, aS, min) {
     });
     const data = await resp.json();
     const txt = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('').trim();
-    const name = txt.split('\n')[0].replace(/[^\w\s.'-]/g,'').trim().slice(0,30) || '-';
+    const name = txt.split('\n')[0].replace(/[^\w\s.\-]/g,'').trim().slice(0,30) || '-';
     golScorerCache[key] = name;
     return name;
   } catch(e) {
@@ -1656,6 +1655,57 @@ function scorerThreeCol(atk, mid, def, lgCol) {
     + cell(def, 'DIFENSORE', '#34d399')
     + '</div></div>';
 }
+function extractJSON(raw) {
+  // Pulisci markdown e caratteri spuri
+  raw = raw.replace(/```json|```/gi, '').replace(/[�-]/g, ' ').trim();
+  // Prova array [ ] prima
+  let depth = 0, start = -1;
+  for (let i = 0; i < raw.length; i++) {
+    if (raw[i] === '[') { if (!depth) start = i; depth++; }
+    else if (raw[i] === ']' && depth) {
+      depth--;
+      if (!depth && start !== -1) {
+        try { const r = JSON.parse(raw.slice(start, i+1)); if (Array.isArray(r) && r.length) return r; } catch(e) {}
+        start = -1;
+      }
+    }
+  }
+  // Fallback: oggetti { } singoli
+  const objs = []; depth = 0; start = -1;
+  for (let i = 0; i < raw.length; i++) {
+    if (raw[i] === '{') { if (!depth) start = i; depth++; }
+    else if (raw[i] === '}' && depth) {
+      depth--;
+      if (!depth && start !== -1) {
+        try { const o = JSON.parse(raw.slice(start, i+1)); if (o && (o.home||o.league)) objs.push(o); } catch(e) {}
+        start = -1;
+      }
+    }
+  }
+  return objs;
+}
+
+function parseClaudeJSON(data) {
+  const blocks = data.content || [];
+  // Priorità: blocchi text in ordine inverso (ultimo = risposta finale dopo tool use)
+  const texts = blocks.filter(b => b.type === 'text').map(b => b.text || '');
+  // Prima cerca nei testi dal più recente
+  for (let i = texts.length - 1; i >= 0; i--) {
+    const r = extractJSON(texts[i]);
+    if (r && r.length) return r;
+  }
+  // Poi cerca nei tool_result
+  for (const b of blocks) {
+    if (b.type === 'tool_result') {
+      const t = (b.content||[]).map(x => x.text||'').join(' ');
+      const r = extractJSON(t);
+      if (r && r.length) return r;
+    }
+  }
+  // Ultimo tentativo: tutto il testo concatenato
+  const all = texts.join(' ');
+  return extractJSON(all) || [];
+}
 async function fetchLive(){
   document.getElementById('statusDot').style.background='#38bdf8';
   document.getElementById('statusText').textContent='🤖 AI cerca partite live...';
@@ -1667,43 +1717,24 @@ async function fetchLive(){
       body: JSON.stringify({
         model:'claude-sonnet-4-20250514',
         max_tokens:1200,
+        system:'Sei un data extractor. Rispondi SEMPRE e SOLO con un array JSON valido. Zero testo fuori dal JSON. Zero spiegazioni. Zero markdown.',
         tools:[{type:'web_search_20250305',name:'web_search'}],
-        messages:[{role:'user',content:`Cerca TUTTI i punteggi LIVE adesso di calcio in tutto il mondo: Serie A, Premier League, La Liga, Bundesliga, Ligue 1, Champions League, Europa League, Conference League, Super Lig, Primeira Liga, Eredivisie, Serie B, Championship, Liga MX, MLS, Saudi Pro League, Russian Premier League, Belgian Pro League, Scottish Premiership, Superliga Argentina, Brasileirao, e qualsiasi altra partita di calcio attualmente in corso.
-Restituisci SOLO un array JSON valido, nessun testo fuori dal JSON, nessun markdown:
-[
-  {
-    "home": "Squadra Casa",
-    "away": "Squadra Trasferta",
-    "hS": 1,
-    "aS": 0,
-    "min": 34,
-    "status": "1H",
-    "league": "serie_a",
-    "hSh": 5,
-    "aSh": 3,
-    "hCorn": 3,
-    "aCorn": 1,
-    "hP": 55,
-    "aP": 45
-  }
-]
+        messages:[{role:'user',content:`Sei un aggregatore di dati sportivi in tempo reale. Cerca i punteggi LIVE di calcio adesso usando queste fonti: Flashscore, Livescore, SofaScore, ESPN, BBC Sport, Sky Sports, Gazzetta dello Sport, Corriere dello Sport, Tuttosport, goal.com, 90min, AS.com, Marca, L'Equipe, Kicker, Football-Italia, OneFootball, Transfermarkt, WhoScored, FBref, Understat, Fotmob, AiScore, 365Scores, ScoreAxis, LiveScore.com, Diretta.it, Risultati in diretta, Sport.de, Tuttomercatoweb, Calciomercato.com, SportYou, Mundo Deportivo, Sport.es, Bein Sports, beIN CONNECT, SuperSport, Sport24, SportMob, LiveScore.biz, Forza Football, Football Livescores, SoccerStats, AZ Score, xScores, LiveTV, SportingLife, SkySports.com, TalkSPORT, The Athletic, Guardian Sport, Telegraph Sport.
+Cerca partite live in TUTTI i campionati del mondo senza eccezioni.
+Restituisci SOLO un array JSON valido, zero testo fuori dal JSON:
+[{"home":"Squadra Casa","away":"Squadra Trasferta","hS":1,"aS":0,"min":34,"status":"1H","league":"serie_a","hSh":5,"aSh":3,"hCorn":3,"aCorn":1,"hP":55,"aP":45,"hSOT":2,"aSOT":1,"hFouls":8,"aFouls":6,"hRed":0,"aRed":0}]
 Regole:
-- status: "1H" primo tempo, "HT" intervallo, "2H" secondo tempo
-- league: usa uno di questi codici: serie_a, epl, ucl, uel, uecl, la_liga, bundesliga, ligue_1, super_lig, primeira, eredivisie, serie_b, championship, liga_mx, mls, saudi_pro, russian_pl, belgian_pro, scottish_pl, arg_superliga, brasileirao, other
-- min: minuto reale della partita (1-45 primo tempo, 46-90 secondo)
-- Se non ci sono partite live adesso restituisci []
-- Includi solo partite ATTUALMENTE IN CORSO, non quelle finite o non ancora iniziate`}]
+- status: "1H" primo tempo, "HT" intervallo, "2H" secondo tempo, "ET" tempi supplementari, "P" rigori
+- league: serie_a, epl, ucl, uel, uecl, la_liga, bundesliga, ligue_1, super_lig, primeira, eredivisie, serie_b, championship, liga_mx, mls, saudi_pro, russian_pl, belgian_pro, scottish_pl, arg_superliga, brasileirao, other
+- min: minuto reale (1-45 primo tempo, 46-90 secondo, 91+ supplementari)
+- Includi SOLO partite ATTUALMENTE IN CORSO
+- Se nessuna partita live restituisci []
+- Più partite trovi meglio è, cerca in tutto il mondo`}]
       })
     });
     const data = await resp.json();
-    const textBlock = (data.content||[]).find(b=>b.type==='text');
-    if(textBlock){
-      const raw = textBlock.text.replace(/```json|```/g,'').trim();
-      // Trova il primo [ e l'ultimo ]
-      const start = raw.indexOf('[');
-      const end = raw.lastIndexOf(']');
-      if(start!==-1 && end!==-1){
-        const matches = JSON.parse(raw.slice(start, end+1));
+    const matches = parseClaudeJSON(data);
+    if(Array.isArray(matches) && matches.length > 0){
         for(const m of matches){
           const lk = m.league || guessLeague(m.home+' '+m.away);
           if(!LEAGUES[lk]) LEAGUES[lk]={name:lk,flag:'🌍',color:'#94a3b8'};
@@ -1725,7 +1756,6 @@ Regole:
           if(m.status==='1H'||m.status==='HT') ht.push(match);
           else ft.push(match);
         }
-      }
     }
   }catch(e){
     document.getElementById('statusText').textContent='⚠️ '+e.message.slice(0,50);
@@ -1736,8 +1766,8 @@ Regole:
   checkGoals([...ht,...ft]);
   if(hasLive){
     document.getElementById('statusDot').style.background='#4ade80';
-    document.getElementById('statusText').textContent='🤖 '+(ht.length+ft.length)+' partite live   20s';
-    let countdown2=20;
+    document.getElementById('statusText').textContent='🤖 '+(ht.length+ft.length)+' partite live   30s';
+    let countdown2=30;
     if(window._countdownTimer) clearInterval(window._countdownTimer);
     window._countdownTimer=setInterval(()=>{
       countdown2--;
@@ -1751,8 +1781,8 @@ Regole:
     else if(ft.length&&!ht.length&&currentTab==='future'){setTabId('ft');}
   }else{
     document.getElementById('statusDot').style.background='#475569';
-    document.getElementById('statusText').textContent='Nessuna partita live   20s';
-    let countdown=20;
+    document.getElementById('statusText').textContent='Nessuna partita live   30s';
+    let countdown=30;
     if(window._countdownTimer) clearInterval(window._countdownTimer);
     window._countdownTimer=setInterval(()=>{
       countdown--;
@@ -1988,8 +2018,8 @@ function futureCard(fix){
   const lg=LEAGUES[fix.league]||{flag:'🌍',name:fix.league,color:'#7c3aed'};
   const ko=new Date(fix.kickoff);
   const h=Math.round((ko-Date.now())/3600000);
-  const dateStr=ko.toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'});
-  const timeStr=ko.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+  const dateStr=ko.toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short',timeZone:'Europe/Rome'});
+  const timeStr=ko.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Rome'});
   const hT=td(fix.home),aT=td(fix.away);
   const cc=pred.conf>=60?'#4ade80':pred.conf>=45?'#facc15':'#94a3b8';
   // Difensore piu pericoloso - dati reali da DEFENDER_DB (Wikipedia/FBref/WhoScored)
@@ -2063,8 +2093,8 @@ function over25Card(fix, rank){
   const pred=predictMatch(fix);
   const lg=LEAGUES[fix.league]||{flag:'🌍',name:fix.league,color:'#7c3aed'};
   const ko=new Date(fix.kickoff);
-  const dateStr=ko.toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'});
-  const timeStr=ko.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+  const dateStr=ko.toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short',timeZone:'Europe/Rome'});
+  const timeStr=ko.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Rome'});
   const hT=td(fix.home),aT=td(fix.away);
   const barColor=pred.over25>=70?'#4ade80':pred.over25>=55?'#facc15':'#fb923c';
   const rankEmoji=['🥇','🥈','🥉','4️','5️'][rank]||'🔹';
@@ -2308,7 +2338,7 @@ function render(){
     return;
   }
   if(currentTab==='over25'){
-    const all=getUpcoming().filter(f=>currentLeague==='all'||f.league===currentLeague);
+    const all=getUpcoming().filter(f=>currentLeague==='all'||f.league===currentLeague).sort((a,b)=>new Date(a.kickoff)-new Date(b.kickoff));
     const source = dynamicFixtures.length>0 ? '📡 Partite reali oggi+domani' : '📋 Calendario fisso';
     const ranked=all
       .map(f=>({f,pred:predictMatch(f)}))
@@ -2394,6 +2424,7 @@ async function fetchFixtures(){
       body:JSON.stringify({
         model:'claude-sonnet-4-20250514',
         max_tokens:1500,
+        system:'Sei un data extractor. Rispondi SEMPRE e SOLO con un array JSON valido. Zero testo fuori dal JSON. Zero spiegazioni. Zero markdown.',
         tools:[{type:'web_search_20250305',name:'web_search'}],
         messages:[{role:'user',content:`Cerca TUTTE le partite di calcio di oggi ${fmt(today)} e domani ${fmt(tomorrow)} in tutto il mondo: Serie A, Premier League, La Liga, Bundesliga, Ligue 1, Champions League, Europa League, Conference League, Super Lig, Primeira Liga, Eredivisie, Serie B, Championship, Liga MX, MLS, Saudi Pro League, e tutti gli altri campionati principali.
 Restituisci SOLO un array JSON, nessun testo fuori, nessun markdown:
@@ -2403,13 +2434,8 @@ kickoff in formato ISO. Includi solo partite non ancora iniziate o di domani.`}]
       })
     });
     const data=await resp.json();
-    const tb=(data.content||[]).find(b=>b.type==='text');
-    if(tb){
-      const raw=tb.text.replace(/```json|```/g,'').trim();
-      const s=raw.indexOf('['), e=raw.lastIndexOf(']');
-      if(s!==-1&&e!==-1){
-        const arr=JSON.parse(raw.slice(s,e+1));
-        if(arr.length>0){
+    const arr=parseClaudeJSON(data);
+    if(Array.isArray(arr) && arr.length>0){
           dynamicFixtures=arr.map((f,i)=>{
             const lk=f.league||guessLeague(f.home+' '+f.away);
             if(!LEAGUES[lk]) LEAGUES[lk]={name:lk,flag:'🌍',color:'#94a3b8'};
@@ -2417,8 +2443,6 @@ kickoff in formato ISO. Includi solo partite non ancora iniziate o di domani.`}]
           });
           buildFilters();
           if(currentTab==='future'||currentTab==='over25'||currentTab==='multipla') render();
-        }
-      }
     }
   }catch(e){ console.warn('fixtures err',e); }
 }
@@ -2446,7 +2470,7 @@ function getOddsForMatch(home, away){
 }
 
 buildFilters();render();fetchLive();fetchFixtures();
-setInterval(()=>{ if(!document.hidden) fetchLive(); }, 20000);
+setInterval(()=>{ if(!document.hidden) fetchLive(); }, 30000);
 setInterval(()=>{ fetchFixtures(); }, 1800000);
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden){ fetchLive(); } });
 </script>
